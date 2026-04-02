@@ -1,0 +1,2268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Courtier – Crédit Immobilier</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --border: #2e3352;
+  --text: #e8eaf6;
+  --text-muted: #7b82a8;
+  --text-dim: #4a5080;
+
+  --p1: #3b82f6; --p1-bg: #0d2044; --p1-light: #1e3a6e;
+  --p2r: #0ea5e9; --p2r-bg: #082033; --p2r-light: #0c3a5a;
+  --p2: #10b981; --p2-bg: #072d1f; --p2-light: #0f4a32;
+  --p3: #8b5cf6; --p3-bg: #1e0d3f; --p3-light: #321a6b;
+  --p4: #f59e0b; --p4-bg: #2d1d00; --p4-light: #4d3200;
+  --p5: #06b6d4; --p5-bg: #021e27; --p5-light: #063849;
+  --p6: #ec4899; --p6-bg: #2d0a1f; --p6-light: #4d1235;
+  --p7: #22c55e; --p7-bg: #062912; --p7-light: #0f4a22;
+  --pa: #ef4444; --pa-bg: #2d0a0a; --pa-light: #4d1212;
+
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ─── HEADER ─────────────────────────────────────────────── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.app-logo {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+.app-logo span { color: var(--p2); }
+
+.header-actions { display: flex; gap: 10px; }
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.btn-primary { background: var(--p2); color: #fff; }
+.btn-primary:hover { background: #0ea572; transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-danger { background: var(--pa-bg); color: var(--pa); border: 1px solid var(--pa-light); }
+.btn-danger:hover { background: var(--pa-light); }
+.btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+/* ─── LAYOUT ─────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  height: calc(100vh - 60px);
+}
+
+/* ─── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px 0;
+}
+.sidebar-section {
+  padding: 0 12px;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  border-radius: 0;
+  transition: all 0.12s;
+  position: relative;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active {
+  background: var(--surface2);
+  border-left-color: var(--phase-color, var(--p2));
+}
+.nav-item .nav-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.nav-item.active .nav-label { color: var(--text); }
+.nav-badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'DM Mono', monospace;
+  padding: 1px 6px;
+  border-radius: 20px;
+  min-width: 24px;
+  text-align: center;
+}
+.nav-item.active .nav-badge {
+  background: var(--phase-color, var(--p2));
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ─── MAIN CONTENT ───────────────────────────────────────── */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* ─── DASHBOARD ──────────────────────────────────────────── */
+.dashboard { display: none; }
+.dashboard.visible { display: block; }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  border-top: 3px solid var(--phase-color, var(--border));
+}
+.kpi-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+.kpi-value { font-size: 32px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--phase-color, var(--text)); }
+.kpi-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+.pipeline-viz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.pipeline-title { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.8px; }
+.pipeline-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  overflow-x: auto;
+}
+.pipeline-step {
+  flex: 1;
+  min-width: 90px;
+  background: var(--phase-bg, var(--surface2));
+  border: 1px solid var(--phase-border, var(--border));
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pipeline-step:hover { filter: brightness(1.2); transform: translateY(-2px); }
+.pipeline-step .step-num { font-size: 22px; font-weight: 700; font-family: 'DM Mono', monospace; }
+.pipeline-step .step-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; line-height: 1.3; }
+.pipeline-arrow { color: var(--text-dim); font-size: 18px; display: flex; align-items: center; padding: 0 2px; }
+
+/* ─── PHASE VIEW ─────────────────────────────────────────── */
+.phase-view { display: none; }
+.phase-view.visible { display: block; }
+
+.phase-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.phase-title-group { display: flex; align-items: center; gap: 12px; }
+.phase-badge {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  background: var(--phase-bg);
+  border: 1px solid var(--phase-border);
+}
+.phase-title { font-size: 20px; font-weight: 700; }
+.phase-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.phase-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ─── DOSSIER CARDS ──────────────────────────────────────── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+.dossier-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all 0.2s;
+  border-left: 4px solid var(--phase-color, var(--border));
+}
+.dossier-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: var(--phase-color, var(--border)); }
+
+.card-header {
+  padding: 14px 16px 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.card-id {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--surface2);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+.card-name { font-size: 16px; font-weight: 700; margin-top: 6px; }
+.card-phone { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.card-body { padding: 0 16px 12px; }
+.card-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.card-field label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
+.card-field span { font-size: 13px; color: var(--text); font-weight: 500; }
+.card-field.full { grid-column: 1 / -1; }
+
+.card-note {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+.card-actions {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-advance {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--phase-color, var(--p2));
+  color: #fff;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-advance:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.btn-advance:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tag-success { background: var(--p2-bg); color: var(--p2); border: 1px solid var(--p2-light); }
+.tag-warning { background: var(--p4-bg); color: var(--p4); border: 1px solid var(--p4-light); }
+.tag-danger  { background: var(--pa-bg); color: var(--pa); border: 1px solid var(--pa-light); }
+.tag-info    { background: var(--p1-bg); color: var(--p1); border: 1px solid var(--p1-light); }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* ─── MODAL ──────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  display: none;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 600px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 10;
+}
+.modal-title { font-size: 16px; font-weight: 700; }
+.modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; line-height: 1; padding: 4px; }
+.modal-close:hover { color: var(--text); }
+
+.modal-body { padding: 20px 24px; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  transition: border-color 0.15s;
+  outline: none;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--p2);
+}
+.form-group textarea { resize: vertical; min-height: 70px; }
+.form-group select option { background: var(--surface2); }
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ─── TRANSITION MODAL ───────────────────────────────────── */
+.transition-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 520px;
+  max-width: 95vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+.transition-banner {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, var(--from-bg), var(--to-bg));
+  border-bottom: 1px solid var(--border);
+}
+.transition-arrow-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.phase-pill {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.transition-client-name {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.transition-subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ─── TOAST ──────────────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow);
+  animation: slideIn 0.3s ease;
+  max-width: 320px;
+}
+.toast.success { border-left: 4px solid var(--p2); }
+.toast.error   { border-left: 4px solid var(--pa); }
+.toast.info    { border-left: 4px solid var(--p1); }
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* ─── SCROLLBAR ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── SEARCH BAR ─────────────────────────────────────────── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.search-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 14px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+}
+.search-input:focus { border-color: var(--p2); }
+.search-input::placeholder { color: var(--text-dim); }
+
+/* ─── ALERTE OFFRES ──────────────────────────────────────── */
+.alert-banner {
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border: 1px solid;
+}
+.alert-banner.urgent { background: #2d0a0a; border-color: #ef4444; color: #fca5a5; animation: pulse-border 2s ease-in-out infinite; }
+.alert-banner.warning { background: #2d1d00; border-color: #f59e0b; color: #fcd34d; }
+.alert-banner.ok { background: #072d1f; border-color: #10b981; color: #6ee7b7; }
+@keyframes pulse-border {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  50% { box-shadow: 0 0 0 5px rgba(239,68,68,0.2); }
+}
+.alert-icon { font-size: 22px; flex-shrink: 0; }
+.alert-content { flex: 1; }
+.alert-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+.alert-list { font-size: 12px; opacity: 0.9; display: flex; flex-direction: column; gap: 6px; }
+.alert-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.btn-sms {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700;
+  transition: all 0.15s; white-space: nowrap;
+}
+.btn-sms.ok { background: #072d1f; color: #34d399; border: 1px solid #065f46; }
+.btn-sms.ok:hover { background: #065f46; }
+.btn-sms.urgent { background: #3b0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+.btn-sms.urgent:hover { background: #7f1d1d; }
+
+.deadline-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 5px;
+  font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace;
+}
+.deadline-badge.urgent { background: #3b0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+.deadline-badge.warning { background: #2d1d00; color: #fcd34d; border: 1px solid #92400e; }
+.deadline-badge.ok { background: #072d1f; color: #6ee7b7; border: 1px solid #065f46; }
+.deadline-badge.expired { background: #1a0a2e; color: #c4b5fd; border: 1px solid #4c1d95; }
+
+/* ─── HISTORY ────────────────────────────────────────────── */
+.history-list { margin-top: 8px; }
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.history-item:last-child { border-bottom: none; }
+.history-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="app-logo">Pipeline <span>Courtier</span> Immobilier</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <!-- Indicateur de présence — boutons directs, sans modale -->
+    <div id="presence-bar" style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px">
+      <span id="my-presence-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text-dim);display:inline-block;flex-shrink:0"></span>
+      <span id="my-presence-name" style="color:var(--text-muted)">—</span>
+      <span style="color:var(--text-dim)">·</span>
+      <span id="other-presence-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text-dim);display:inline-block;flex-shrink:0"></span>
+      <span id="other-presence-name" style="color:var(--text-dim)">—</span>
+      <span style="color:var(--text-dim);margin-left:4px">|</span>
+      <button onclick="setPresenceUser('Christophe')" class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px">Christophe</button>
+      <button onclick="setPresenceUser('Laure')" class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px">Laure</button>
+    </div>
+    <span id="sync-status" style="font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace">☁️</span>
+    <span id="sync-countdown" style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace" title="Prochaine sync">↻ 30s</span>
+    <button class="btn btn-ghost btn-sm" onclick="silentRefresh();toast('Actualisation…','info')" title="Actualiser">🔄</button>
+    <button class="btn btn-ghost btn-sm" onclick="openSyncConfig()" title="Config sync">⚙️</button>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" onclick="exportData()" title="Sauvegarde de secours sur votre PC">💾 Sauvegarder</button>
+    <button class="btn btn-primary" onclick="openNewDossier()">+ Nouveau dossier</button>
+  </div>
+</header>
+
+<!-- MODAL CHOIX UTILISATEUR -->
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <!-- MAIN -->
+  <main class="main" id="main-content"></main>
+</div>
+
+<!-- MODAL NOUVEAU DOSSIER -->
+<div class="modal-overlay" id="modal-new">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🔵 Nouveau dossier – Phase 1 (R1)</span>
+      <button class="modal-close" onclick="closeModal('modal-new')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" id="form-new-fields"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveNewDossier()">Créer le dossier</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TRANSITION -->
+<div class="modal-overlay" id="modal-transition">
+  <div class="transition-modal">
+    <div class="transition-banner" id="transition-banner">
+      <div class="transition-arrow-row" id="transition-arrow-row"></div>
+      <div class="transition-client-name" id="transition-client-name"></div>
+      <div class="transition-subtitle" id="transition-subtitle"></div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;" id="transition-desc"></p>
+      <div class="form-grid" id="transition-fields"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-transition')">Annuler</button>
+      <button class="btn btn-primary" id="btn-confirm-transition" onclick="confirmTransition()">✓ Confirmer le passage</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ABANDON -->
+<div class="modal-overlay" id="modal-abandon">
+  <div class="modal" style="width:440px">
+    <div class="modal-header">
+      <span class="modal-title">🚫 Abandonner le dossier</span>
+      <button class="modal-close" onclick="closeModal('modal-abandon')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Motif d'abandon</label>
+          <select id="abandon-motif">
+            <option value="">-- Sélectionner --</option>
+            <option>Non finançable</option>
+            <option>Projet non mature</option>
+            <option>Client non répondant</option>
+            <option>Client a choisi un autre courtier</option>
+            <option>Bien non obtenu</option>
+            <option>Autre</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Relance possible ?</label>
+          <select id="abandon-relance">
+            <option value="Non">Non</option>
+            <option value="Dans 3 mois">Dans 3 mois</option>
+            <option value="Dans 6 mois">Dans 6 mois</option>
+            <option value="Dans 1 an">Dans 1 an</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Notes</label>
+          <textarea id="abandon-notes" placeholder="Raison détaillée..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-abandon')">Annuler</button>
+      <button class="btn btn-danger" onclick="confirmAbandon()">Confirmer l'abandon</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÉDITION -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal" style="width:620px">
+    <div class="modal-header">
+      <span class="modal-title" id="edit-modal-title">✏️ Modifier le dossier</span>
+      <button class="modal-close" onclick="closeModal('modal-edit')">×</button>
+    </div>
+    <div class="modal-body" id="edit-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEdit()">✓ Enregistrer les modifications</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG SYNC -->
+<div class="modal-overlay" id="modal-sync">
+  <div class="modal" style="width:540px">
+    <div class="modal-header">
+      <span class="modal-title">⚙️ Configuration synchronisation Google Sheets</span>
+      <button class="modal-close" onclick="closeModal('modal-sync')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--p1-bg);border:1px solid var(--p1-light);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--text-muted);line-height:1.7">
+        <strong style="color:var(--p1)">Pour activer la synchronisation complète (lecture + écriture)</strong><br>
+        Il faut créer un Google Apps Script en 3 minutes. Suivez le guide ci-dessous.
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Étape 1 — Créer le Apps Script</div>
+        <ol style="font-size:12px;color:var(--text-muted);line-height:2;padding-left:18px">
+          <li>Allez sur <strong style="color:var(--text)">script.google.com</strong> → Nouveau projet</li>
+          <li>Collez ce code, remplacez l'ID du Sheet :</li>
+        </ol>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--p2);margin-top:8px;white-space:pre-wrap;user-select:all">function doPost(e) {
+  var ss = SpreadsheetApp.openById(
+    '1Bfg8f2I-UQKuAv5u-AnQGSyIMv5iMUkwg5KkSdHGsQs'
+  );
+  var sh = ss.getSheets()[0];
+  var body = e.postData.contents;
+  try {
+    var json = JSON.parse(body);
+    if (json.type === 'presence') {
+      var pres = {};
+      try { pres = JSON.parse(sh.getRange('B1').getValue()||'{}'); } catch(x){}
+      pres[json.user] = json.ts;
+      sh.getRange('B1').setValue(JSON.stringify(pres));
+    } else {
+      sh.getRange('A1').setValue(body);
+    }
+  } catch(x) {
+    sh.getRange('A1').setValue(body);
+  }
+  return ContentService.createTextOutput('OK');
+}
+
+function doGet(e) {
+  var ss = SpreadsheetApp.openById(
+    '1Bfg8f2I-UQKuAv5u-AnQGSyIMv5iMUkwg5KkSdHGsQs'
+  );
+  var sh = ss.getSheets()[0];
+  if (e.parameter.action === 'presence') {
+    return ContentService.createTextOutput(
+      sh.getRange('B1').getValue() || '{}'
+    );
+  }
+  return ContentService.createTextOutput(sh.getRange('A1').getValue());
+}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px">Cliquez sur le code pour le sélectionner, copiez-collez dans Apps Script</div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Étape 2 — Déployer</div>
+        <ol style="font-size:12px;color:var(--text-muted);line-height:2;padding-left:18px">
+          <li>Cliquez <strong style="color:var(--text)">Déployer → Nouveau déploiement</strong></li>
+          <li>Type : <strong style="color:var(--text)">Application Web</strong></li>
+          <li>Accès : <strong style="color:var(--text)">Tout le monde</strong></li>
+          <li>Cliquez <strong style="color:var(--text)">Déployer</strong> → copiez l'URL</li>
+        </ol>
+      </div>
+
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Étape 3 — Coller l'URL ici</div>
+        <div class="form-group full">
+          <label>URL du Apps Script (commence par https://script.google.com/macros/s/...)</label>
+          <input type="text" id="script-url-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+        </div>
+      </div>
+
+      <div style="margin-top:12px;padding:10px 12px;background:var(--p2-bg);border:1px solid var(--p2-light);border-radius:8px;font-size:12px;color:var(--text-muted)">
+        <strong style="color:var(--p2)">En attendant</strong> — vos données sont sauvegardées localement sur cet appareil et lisibles depuis Google Sheets. La synchronisation entre appareils sera active dès que vous aurez configuré l'URL.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-sync')">Fermer</button>
+      <button class="btn btn-primary" onclick="saveSyncConfig()">✓ Enregistrer l'URL</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RELANCE -->
+<div class="modal-overlay" id="modal-relance">
+  <div class="modal" style="width:420px">
+    <div class="modal-header">
+      <span class="modal-title" id="relance-modal-title">Enregistrer une relance</span>
+      <button class="modal-close" onclick="closeModal('modal-relance')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group full">
+        <label>Note / compte-rendu de la relance</label>
+        <textarea id="relance-note" placeholder="Ex: Appelé conseiller Leblanc – en attente accord comité crédit prévu jeudi..." style="min-height:100px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-relance')">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmRelance()">✓ Enregistrer la relance</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ─── DATA MODEL ────────────────────────────────────────────────────────────────
+const PHASES = [
+  { id: 0, key: 'p1', name: 'Phase 1 – R1',           short: 'R1',          emoji: '🔵', color: 'var(--p1)', bg: 'var(--p1-bg)', border: 'var(--p1-light)' },
+  { id: 1, key: 'p2', name: 'Phase 2 – R2',            short: 'R2',          emoji: '🟦', color: 'var(--p2r)', bg: 'var(--p2r-bg)', border: 'var(--p2r-light)' },
+  { id: 2, key: 'p3', name: 'Phase 3 – Mandat',        short: 'Mandat',      emoji: '🟢', color: 'var(--p2)', bg: 'var(--p2-bg)', border: 'var(--p2-light)' },
+  { id: 3, key: 'p4', name: 'Phase 4 – Banques',       short: 'Banques',     emoji: '🟣', color: 'var(--p3)', bg: 'var(--p3-bg)', border: 'var(--p3-light)' },
+  { id: 4, key: 'p5', name: 'Phase 5 – RDV Banque',    short: 'RDV Banque',  emoji: '🟠', color: 'var(--p4)', bg: 'var(--p4-bg)', border: 'var(--p4-light)' },
+  { id: 5, key: 'p6', name: 'Phase 6 – Offres',        short: 'Offres',      emoji: '🔷', color: 'var(--p5)', bg: 'var(--p5-bg)', border: 'var(--p5-light)' },
+  { id: 6, key: 'p7', name: 'Phase 7 – Notaire',       short: 'Notaire',     emoji: '🟤', color: 'var(--p6)', bg: 'var(--p6-bg)', border: 'var(--p6-light)' },
+  { id: 7, key: 'p8', name: 'Phase 8 – Honoraires',    short: 'Honoraires',  emoji: '💰', color: 'var(--p7)', bg: 'var(--p7-bg)', border: 'var(--p7-light)' },
+  { id: 8, key: 'pa', name: 'Abandonnés',               short: 'Abandonnés',  emoji: '🚫', color: 'var(--pa)', bg: 'var(--pa-bg)', border: 'var(--pa-light)' },
+];
+
+// Fields collected at each transition
+const TRANSITION_FIELDS = {
+  0: [], // P1 R1: filled at creation
+  1: [ // → P2 R2
+    { key: 'dateR2',           label: 'Date du R2',                   type: 'date', required: true },
+    { key: 'typePromesse',     label: "Type",                         type: 'select', options: ['Promesse de vente signée','Offre d\'achat acceptée','Compromis signé'] },
+    { key: 'datePromesse',     label: 'Date promesse / offre',        type: 'date' },
+    { key: 'montantBienDef',   label: 'Montant définitif du bien (€)',type: 'number', placeholder: '320000' },
+    { key: 'apportConfirme',   label: 'Apport confirmé (€)',          type: 'number', placeholder: '30000' },
+    { key: 'notesR2',          label: 'Notes R2',                     type: 'textarea', full: true },
+  ],
+  2: [ // → P3 Mandat
+    { key: 'dateMandat', label: 'Date signature mandat', type: 'date', required: true },
+    { key: 'montantBien', label: 'Montant du bien (€)', type: 'number', placeholder: '320000' },
+    { key: 'montantPret', label: 'Montant du prêt (€)', type: 'number', placeholder: '290000' },
+    { key: 'apport', label: 'Apport (€)', type: 'number', placeholder: '30000' },
+    { key: 'duree', label: 'Durée souhaitée (ans)', type: 'number', placeholder: '20' },
+    { key: 'honorairesMandat', label: 'Honoraires convenus HT (€)', type: 'number', placeholder: '3500' },
+    { key: 'notesMandat', label: 'Notes', type: 'textarea', full: true },
+  ],
+  3: [ // → P4 Banques interrogées
+    { key: 'dateInterro', label: 'Date interrogation banques', type: 'date' },
+    { key: 'banque1', label: 'Banque 1', type: 'text', placeholder: 'BNP Paribas' },
+    { key: 'taux1', label: 'Taux banque 1 (%)', type: 'text', placeholder: '3.45' },
+    { key: 'banque2', label: 'Banque 2', type: 'text', placeholder: 'Crédit Agricole' },
+    { key: 'taux2', label: 'Taux banque 2 (%)', type: 'text', placeholder: '3.55' },
+    { key: 'banque3', label: 'Banque 3 (optionnel)', type: 'text', placeholder: 'CIC' },
+    { key: 'taux3', label: 'Taux banque 3 (%)', type: 'text', placeholder: '3.62' },
+    { key: 'banqueChoisie', label: 'Banque choisie par le client', type: 'text', required: true },
+    { key: 'tauxRetenu', label: 'Taux retenu (%)', type: 'text', required: true },
+  ],
+  4: [ // → P5 RDV Banque
+    { key: 'dateRdvBanque', label: 'Date RDV avec la banque', type: 'date', required: true },
+    { key: 'heureRdv', label: 'Heure', type: 'time' },
+    { key: 'lieuRdv', label: 'Lieu / Agence', type: 'text', placeholder: 'Agence BNP St-Nazaire' },
+    { key: 'conseillerBanque', label: 'Conseiller banque', type: 'text' },
+    { key: 'notesRdv', label: 'Notes', type: 'textarea', full: true },
+  ],
+  5: [ // → P6 Offres éditées
+    { key: 'dateOffres', label: "Date d'édition des offres", type: 'date', required: true },
+    { key: 'taeg', label: 'TAEG (%)', type: 'text', placeholder: '3.72' },
+    { key: 'assurance', label: 'Assurance (%)', type: 'text', placeholder: '0.25' },
+    { key: 'notesOffres', label: 'Notes', type: 'textarea', full: true },
+  ],
+  6: [ // → P7 Notaire
+    { key: 'notaire', label: 'Notaire', type: 'text', placeholder: 'Me Martin – St-Nazaire', required: true },
+    { key: 'dateSignaturePrevue', label: 'Date signature prévue', type: 'date' },
+    { key: 'montantBienDefinitif', label: 'Montant bien définitif (€)', type: 'number' },
+    { key: 'honorairesHT', label: 'Honoraires HT (€)', type: 'number', placeholder: '3500' },
+    { key: 'notesNotaire', label: 'Notes', type: 'textarea', full: true },
+  ],
+  7: [ // → P8 Honoraires
+    { key: 'dateSignatureEffective', label: 'Date signature effective', type: 'date', required: true },
+    { key: 'honorairesHT', label: 'Honoraires HT (€)', type: 'number' },
+    { key: 'modePaiement', label: 'Mode de paiement', type: 'select', options: ['Virement','Chèque','Espèces'] },
+    { key: 'dateEncaissement', label: 'Date encaissement', type: 'date' },
+    { key: 'notesHonoraires', label: 'Notes', type: 'textarea', full: true },
+  ],
+};
+
+const P1_FIELDS = [
+  { key: 'nom',      label: 'Nom',            type: 'text',   required: true },
+  { key: 'prenom',   label: 'Prénom',          type: 'text',   required: true },
+  { key: 'telephone',label: 'Téléphone',       type: 'text',   required: true },
+  { key: 'email',    label: 'Email',           type: 'email' },
+  { key: 'typeContact', label: 'Situation', type: 'select', options: ['En recherche de bien','Offre acceptée','Compromis signé'] },
+  { key: 'montantBienEstime', label: 'Montant bien estimé (€)', type: 'number', placeholder: '300000' },
+  { key: 'apport',   label: 'Apport (€)',      type: 'number', placeholder: '30000' },
+  { key: 'dateR1',   label: 'Date du R1',      type: 'date',   required: true },
+  { key: 'resultatR1', label: 'Résultat R1', type: 'select', options: ['Qualifié','À retravailler','Abandonné'] },
+  { key: 'notesR1',  label: 'Notes R1',        type: 'textarea', full: true },
+];
+
+// ─── GOOGLE SHEETS CONFIG ──────────────────────────────────────────────────────
+const GS_API_KEY   = 'AIzaSyDrfFKGFXTAcyElPwpusca7PDdwqTxPBgU';
+const GS_SHEET_ID  = '1Bfg8f2I-UQKuAv5u-AnQGSyIMv5iMUkwg5KkSdHGsQs';
+const GS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyB05Dq1A8CWo0Rf3Hj4SbOjYtoDeIoM2KPjdPTLH1oV_M8hTP3zoS-iNHI2vYhpjdh/exec';
+const GS_RANGE     = 'Feuille1!A1:A1';   // on stocke tout en JSON dans une seule cellule
+const GS_BASE      = 'https://sheets.googleapis.com/v4/spreadsheets';
+let   gsSyncTimer  = null;
+let   gsStatus     = 'idle'; // idle | saving | saved | error | loading
+
+// Affiche le statut de sync dans le header
+function setSyncStatus(s, msg) {
+  gsStatus = s;
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const icons = { idle:'☁️', saving:'⏳', saved:'✅', error:'❌', loading:'🔄' };
+  const colors = { idle:'var(--text-dim)', saving:'var(--p4)', saved:'var(--p2)', error:'var(--pa)', loading:'var(--p1)' };
+  el.textContent = `${icons[s]} ${msg||''}`;
+  el.style.color = colors[s];
+}
+
+// Lecture depuis Google Sheets via Apps Script (doGet)
+async function gsLoad() {
+  setSyncStatus('loading', 'Chargement…');
+  try {
+    const url = `${GS_SCRIPT_URL}?action=read`;
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!text || text === 'null' || text.trim() === '') {
+      setSyncStatus('idle', 'Feuille vide');
+      return false;
+    }
+    const parsed = JSON.parse(text);
+    if (parsed && parsed.dossiers) {
+      state.dossiers = migratePhases(parsed.dossiers);
+      state.nextId   = parsed.nextId || 1;
+      setSyncStatus('saved', 'Synchronisé');
+      return true;
+    }
+    return false;
+  } catch(e) {
+    console.warn('gsLoad error:', e);
+    // Fallback : lire via API key
+    try {
+      const url2 = `${GS_BASE}/${GS_SHEET_ID}/values/${encodeURIComponent('Feuille1!A1')}?key=${GS_API_KEY}`;
+      const res2 = await fetch(url2);
+      const data = await res2.json();
+      const raw = data.values?.[0]?.[0];
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        state.dossiers = migratePhases(parsed.dossiers || []);
+        state.nextId   = parsed.nextId   || 1;
+        setSyncStatus('saved', 'Synchronisé');
+        return true;
+      }
+    } catch(e2) {}
+    setSyncStatus('error', 'Hors ligne – données locales');
+    return false;
+  }
+}
+
+// Écriture dans Google Sheets (via Apps Script webhook)
+// On utilise la méthode batchUpdate avec OAuth implicite via fetch + clé API
+// Pour écriture on passe par un Apps Script déployé en tant que webapp publique.
+// Sans Apps Script, la clé API seule ne peut que lire.
+// → On utilise un proxy CORS gratuit + OAuth via gapi implicite
+// Solution la plus simple sans serveur : Google Apps Script Web App
+async function gsWrite(payload) {
+  localStorage.setItem('pipeline_gs_backup', payload);
+  const scriptUrl = GS_SCRIPT_URL || localStorage.getItem('gs_script_url');
+  if (scriptUrl) {
+    try {
+      setSyncStatus('saving', 'Sauvegarde…');
+      await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: payload,
+        mode: 'no-cors',
+      });
+      setSyncStatus('saved', 'Synchronisé');
+    } catch(e) {
+      setSyncStatus('error', 'Erreur sync');
+    }
+  } else {
+    setSyncStatus('saved', 'Local uniquement');
+  }
+}
+
+// ─── STATE ─────────────────────────────────────────────────────────────────────
+let state = {
+  dossiers: [],
+  currentView: 'dashboard',
+  nextId: 1,
+  pendingTransition: null,
+  pendingAbandon: null,
+  pendingRelance: null,
+  pendingEdit: null,
+};
+
+// Migration : décale les phases des anciens dossiers (avant l'ajout du R2)
+// Anciens : 1=Mandat 2=Banques 3=RDV 4=Offres 5=Notaire 6=Honoraires 7=Abandonnés
+// Nouveaux: 2=Mandat 3=Banques 4=RDV  5=Offres 6=Notaire 7=Honoraires 8=Abandonnés
+function migratePhases(dossiers) {
+  return dossiers.map(d => {
+    if (d._migrated_r2) return d; // déjà migré
+    if (d.phase >= 1 && d.phase <= 7) {
+      d.phase = d.phase + 1; // décale de 1 pour faire de la place au R2
+    }
+    d._migrated_r2 = true;
+    return d;
+  });
+}
+
+function loadState() {
+  seedData();
+  render();
+}
+
+// Actualisation silencieuse depuis Google Sheets (sans écraser les modales ouvertes)
+async function silentRefresh() {
+  // Ne pas rafraîchir si une modale est ouverte (l'utilisateur est en train de saisir)
+  const anyOpen = document.querySelector('.modal-overlay.open');
+  if (anyOpen) return;
+
+  try {
+    const url = `${GS_SCRIPT_URL}?action=read`;
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) return;
+    const text = await res.text();
+    if (!text || text.trim() === '' || text === '{}') return;
+    const parsed = JSON.parse(text);
+    if (!parsed || !parsed.dossiers) return;
+
+    // Comparer avec l'état actuel — ne re-rendre que si changement réel
+    const currentJson = JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId });
+    const remoteJson  = JSON.stringify({ dossiers: parsed.dossiers, nextId: parsed.nextId });
+    if (currentJson === remoteJson) return; // Rien de nouveau
+
+    // Mettre à jour l'état et re-rendre
+    state.dossiers = migratePhases(parsed.dossiers);
+    state.nextId   = parsed.nextId || state.nextId;
+    localStorage.setItem('pipeline_courtier_v2', remoteJson);
+    setSyncStatus('saved', 'Synchronisé');
+    render();
+    toast('📡 Mis à jour par votre collaboratrice', 'info');
+  } catch(e) {
+    // Silencieux — pas de message d'erreur pour un refresh de fond
+  }
+}
+
+function saveState() {
+  const payload = JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId });
+  localStorage.setItem('pipeline_courtier_v2', payload);
+}
+
+function seedData() {
+  const raw = JSON.parse(atob('eyJkb3NzaWVycyI6IFt7ImlkIjogIkRPUy0wMDEiLCAicGhhc2UiOiAyLCAibm9tIjogIkRPUkdFUkUiLCAicHJlbm9tIjogIk1BUlZJTiIsICJ0ZWxlcGhvbmUiOiAiMDYzNzY4MTMwOCAiLCAiZW1haWwiOiAiZG9yZ2VyZS5tYXJ2aW5AZ21haWwuY29tIiwgImdlc3Rpb25uYWlyZSI6ICIiLCAidHlwZUNvbnRhY3QiOiAiT2ZmcmUgYWNjZXB0XHUwMGU5ZSIsICJtb250YW50QmllbkVzdGltZSI6ICIxNDUwMDAiLCAiYXBwb3J0IjogIjE1MDAwIiwgInJldmVudXMiOiAiMjMwMCIsICJkYXRlUjEiOiAiMjAyNi0wMi0xNiIsICJyZXN1bHRhdFIxIjogIlF1YWxpZmlcdTAwZTkiLCAibm90ZXNSMSI6ICJQcmltby1hY2NcdTAwZTlkYW50LCBDREksIGJvbiBkb3NzaWVyIiwgImhpc3RvcnkiOiBbeyJkYXRlIjogIjIwMjYtMDItMTYiLCAiZnJvbSI6IC0xLCAidG8iOiAwLCAibm90ZSI6ICJDclx1MDBlOWF0aW9uIGRvc3NpZXIifSwgeyJkYXRlIjogIjIwMjYtMDMtMTgiLCAiZnJvbSI6IDAsICJ0byI6IDEsICJub3RlIjogIlBhc3NhZ2UgZGUgUjEgXHUwMGUwIE1hbmRhdCJ9XSwgImRhdGVNYW5kYXQiOiAiMjAyNi0wMy0xOCIsICJtb250YW50QmllbiI6ICIxNDUwMDAiLCAibW9udGFudFByZXQiOiAiMTQwMDAwIiwgImR1cmVlIjogIjIzIiwgImhvbm9yYWlyZXNNYW5kYXQiOiAiMzAwMCIsICJub3Rlc01hbmRhdCI6ICIiLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZX0sIHsiaWQiOiAiRE9TLTAwMiIsICJwaGFzZSI6IDIsICJub20iOiAiQkVBVVBFVVgiLCAicHJlbm9tIjogIkFOVEhPTlkiLCAidGVsZXBob25lIjogIjA2NzIyOTcyNTkiLCAiZW1haWwiOiAiYW50aG9ueS5iZWF1cGV1eEBob3RtYWlsLmZyIiwgImdlc3Rpb25uYWlyZSI6ICIiLCAidHlwZUNvbnRhY3QiOiAiQ29tcHJvbWlzIHNpZ25cdTAwZTkiLCAibW9udGFudEJpZW5Fc3RpbWUiOiAyNTAwMDAsICJhcHBvcnQiOiAiMTIwMDAwIiwgInJldmVudXMiOiAzODAwLCAiZGF0ZVIxIjogIjIwMjYtMDItMjEiLCAicmVzdWx0YXRSMSI6ICJRdWFsaWZpXHUwMGU5IiwgIm5vdGVzUjEiOiAiRG9zc2llciBjb21wbGV0IiwgImRhdGVNYW5kYXQiOiAiMjAyNi0wMy0xMiIsICJtb250YW50QmllbiI6ICIyMDEwMDAiLCAibW9udGFudFByZXQiOiAiOTAwMDAiLCAiZHVyZWUiOiAiMTUiLCAiaG9ub3JhaXJlc01hbmRhdCI6ICIyNTAwIiwgImhpc3RvcnkiOiBbeyJkYXRlIjogIjIwMjYtMDItMjEiLCAiZnJvbSI6IC0xLCAidG8iOiAwLCAibm90ZSI6ICJDclx1MDBlOWF0aW9uIn0sIHsiZGF0ZSI6ICIyMDI2LTAyLTI2IiwgImZyb20iOiAwLCAidG8iOiAxLCAibm90ZSI6ICJNYW5kYXQgc2lnblx1MDBlOSJ9XSwgIm5vdGVzTWFuZGF0IjogImFubm9uY1x1MDBlOSBlbiByRHYgMjAwMCIsICJfbWlncmF0ZWRfcjIiOiB0cnVlfSwgeyJpZCI6ICJET1MtMDAzIiwgInBoYXNlIjogNCwgIm5vbSI6ICJUSElCQVVMVCIsICJwcmVub20iOiAiREFWSUQiLCAidGVsZXBob25lIjogIjA2MTc0OTg4MjUiLCAiZW1haWwiOiAiZHRoaWJhdWx0QGxvZ2lmbG93cy5mciIsICJnZXN0aW9ubmFpcmUiOiAiSmVhbiBEdXBvbnQiLCAidHlwZUNvbnRhY3QiOiAiT2ZmcmUgYWNjZXB0XHUwMGU5ZSIsICJtb250YW50QmllbkVzdGltZSI6IDM1MDAwMCwgImFwcG9ydCI6IDUwMDAwLCAicmV2ZW51cyI6IDYwMDAsICJkYXRlUjEiOiAiMjAyNi0wMi0wNiIsICJyZXN1bHRhdFIxIjogIlF1YWxpZmlcdTAwZTkiLCAiZGF0ZU1hbmRhdCI6ICIyMDI2LTAyLTExIiwgIm1vbnRhbnRCaWVuIjogMzQ4MDAwLCAibW9udGFudFByZXQiOiAyOTgwMDAsICJkdXJlZSI6IDIwLCAiaG9ub3JhaXJlc01hbmRhdCI6IDM4MDAsICJkYXRlSW50ZXJybyI6ICIyMDI2LTAzLTAzIiwgImJhbnF1ZTEiOiAiQ1JFRElUIE1VVFVFTCIsICJ0YXV4MSI6ICIzLjM1IiwgImJhbnF1ZTIiOiAiQ0UiLCAidGF1eDIiOiAiMy4yNSIsICJiYW5xdWUzIjogIkNJQyIsICJ0YXV4MyI6ICIzLjYyIiwgImJhbnF1ZUNob2lzaWUiOiAiQ1JFRElUIE1VVFVFTCIsICJ0YXV4UmV0ZW51IjogIjMuMzUiLCAicmVsYW5jZXMiOiBbeyJkYXRlIjogIjIwMjYtMDMtMTUiLCAiaGV1cmUiOiAiMDk6MzAiLCAidHlwZSI6ICJiYW5xdWUiLCAibm90ZSI6ICJBcHBlbFx1MDBlOSBjb25zZWlsbGVyIEJOUCBcdTIwMTMgZG9zc2llciBlbiBjb3VycyBkJ2FuYWx5c2UsIHJldG91ciBwclx1MDBlOXZ1IHZlbmRyZWRpIn1dLCAiaGlzdG9yeSI6IFt7ImRhdGUiOiAiMjAyNi0wMi0wNiIsICJmcm9tIjogLTEsICJ0byI6IDAsICJub3RlIjogIkNyXHUwMGU5YXRpb24ifSwgeyJkYXRlIjogIjIwMjYtMDItMTEiLCAiZnJvbSI6IDAsICJ0byI6IDEsICJub3RlIjogIk1hbmRhdCJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0wOCIsICJmcm9tIjogMSwgInRvIjogMiwgIm5vdGUiOiAiQmFucXVlcyBpbnRlcnJvZ1x1MDBlOWVzLCBCTlAgY2hvaXNpZSJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0xOSIsICJmcm9tIjogMiwgInRvIjogMywgIm5vdGUiOiAiUGFzc2FnZSBkZSBCYW5xdWVzIFx1MDBlMCBSRFYgQmFucXVlIn1dLCAiZGF0ZVJkdkJhbnF1ZSI6ICIyMDI2LTAzLTI2IiwgImhldXJlUmR2IjogIjE3OjAwIiwgImxpZXVSZHYiOiAiU0VHUkUiLCAiY29uc2VpbGxlckJhbnF1ZSI6ICJUUk9VVkUgQVVSRUxJRSIsICJub3Rlc1JkdiI6ICIiLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZX0sIHsiaWQiOiAiRE9TLTAwNCIsICJwaGFzZSI6IDQsICJub20iOiAiR2FybmllciIsICJwcmVub20iOiAiTWFyYyIsICJ0ZWxlcGhvbmUiOiAiMDYgNTUgNDQgMzMgMjIiLCAiZW1haWwiOiAibS5nYXJuaWVyQGVtYWlsLmZyIiwgImdlc3Rpb25uYWlyZSI6ICJNYXJpZSBMYW1iZXJ0IiwgInR5cGVDb250YWN0IjogIkNvbXByb21pcyBzaWduXHUwMGU5IiwgIm1vbnRhbnRCaWVuRXN0aW1lIjogMjgwMDAwLCAiYXBwb3J0IjogNDAwMDAsICJyZXZlbnVzIjogNTEwMCwgImRhdGVSMSI6ICIyMDI2LTAxLTIyIiwgInJlc3VsdGF0UjEiOiAiUXVhbGlmaVx1MDBlOSIsICJkYXRlTWFuZGF0IjogIjIwMjYtMDEtMjciLCAibW9udGFudEJpZW4iOiAyNzkwMDAsICJtb250YW50UHJldCI6IDIzOTAwMCwgImR1cmVlIjogMjAsICJob25vcmFpcmVzTWFuZGF0IjogMzIwMCwgImJhbnF1ZUNob2lzaWUiOiAiU29jaVx1MDBlOXRcdTAwZTkgR1x1MDBlOW5cdTAwZTlyYWxlIiwgInRhdXhSZXRlbnUiOiAiMy4zMCIsICJkYXRlUmR2QmFucXVlIjogIjIwMjYtMDMtMDkiLCAiaGV1cmVSZHYiOiAiMTQ6MzAiLCAibGlldVJkdiI6ICJBZ2VuY2UgU0cgU3QtTmF6YWlyZSIsICJyZWxhbmNlcyI6IFt7ImRhdGUiOiAiMjAyNi0wMy0yMCIsICJoZXVyZSI6ICIxOTowOCIsICJ0eXBlIjogInJkdiIsICJub3RlIjogIiJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0yMSIsICJoZXVyZSI6ICIxOTowOCIsICJ0eXBlIjogInJkdiIsICJub3RlIjogIlJlbGFuY2UgYWNjb21wbGllIFx1MjcxMyIsICJkb25lIjogdHJ1ZX1dLCAiaGlzdG9yeSI6IFt7ImRhdGUiOiAiMjAyNi0wMS0yMiIsICJmcm9tIjogLTEsICJ0byI6IDAsICJub3RlIjogIkNyXHUwMGU5YXRpb24ifSwgeyJkYXRlIjogIjIwMjYtMDEtMjciLCAiZnJvbSI6IDAsICJ0byI6IDEsICJub3RlIjogIk1hbmRhdCJ9LCB7ImRhdGUiOiAiMjAyNi0wMi0wMSIsICJmcm9tIjogMSwgInRvIjogMiwgIm5vdGUiOiAiU0cgY2hvaXNpZSJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0wNiIsICJmcm9tIjogMiwgInRvIjogMywgIm5vdGUiOiAiUkRWIGJhbnF1ZSBmaXhcdTAwZTkifV0sICJfbWlncmF0ZWRfcjIiOiB0cnVlLCAicmVsYW5jZV9yZHZfZG9uZSI6ICIyMDI2LTAzLTIxIn0sIHsiaWQiOiAiRE9TLTAwNSIsICJwaGFzZSI6IDYsICJub20iOiAiQ09MTEVUIiwgInByZW5vbSI6ICJDSEFSTEVORSIsICJ0ZWxlcGhvbmUiOiAiMDY4OTc1MDI3OCIsICJlbWFpbCI6ICJjaGFybGVuZTExMDNAZ21haWwuY29tIiwgImdlc3Rpb25uYWlyZSI6ICIiLCAidHlwZUNvbnRhY3QiOiAiQ29tcHJvbWlzIHNpZ25cdTAwZTkiLCAibW9udGFudEJpZW5Fc3RpbWUiOiAzMTAwMDAsICJhcHBvcnQiOiA0MjAwMCwgInJldmVudXMiOiA1NjAwLCAiZGF0ZVIxIjogIjIwMjYtMDEtMTciLCAicmVzdWx0YXRSMSI6ICJRdWFsaWZpXHUwMGU5IiwgImRhdGVNYW5kYXQiOiAiMjAyNi0wMS0yMiIsICJtb250YW50QmllbiI6IDMwODAwMCwgIm1vbnRhbnRQcmV0IjogMjY2MDAwLCAiZHVyZWUiOiAyMCwgImJhbnF1ZUNob2lzaWUiOiAiQ0lDIiwgInRhdXhSZXRlbnUiOiAiMy4zOCIsICJkYXRlT2ZmcmVzIjogIjIwMjYtMDMtMDciLCAiZGF0ZUxpbWl0ZUFjY2VwdGF0aW9uIjogIjIwMjYtMDMtMTgiLCAidGFlZyI6ICIzLjY1IiwgImFzc3VyYW5jZSI6ICIwLjIyIiwgImhpc3RvcnkiOiBbeyJkYXRlIjogIjIwMjYtMDEtMTciLCAiZnJvbSI6IC0xLCAidG8iOiAwLCAibm90ZSI6ICJDclx1MDBlOWF0aW9uIn0sIHsiZGF0ZSI6ICIyMDI2LTAxLTIyIiwgImZyb20iOiAwLCAidG8iOiAxLCAibm90ZSI6ICJNYW5kYXQifSwgeyJkYXRlIjogIjIwMjYtMDEtMjkiLCAiZnJvbSI6IDEsICJ0byI6IDIsICJub3RlIjogIkNJQyBjaG9pc2kifSwgeyJkYXRlIjogIjIwMjYtMDItMDYiLCAiZnJvbSI6IDIsICJ0byI6IDMsICJub3RlIjogIlJEViBDSUMifSwgeyJkYXRlIjogIjIwMjYtMDMtMDkiLCAiZnJvbSI6IDMsICJ0byI6IDQsICJub3RlIjogIk9mZnJlcyBcdTAwZTlkaXRcdTAwZTllcyBcdTIwMTMgZFx1MDBlOWxhaSBKKzExIn0sIHsiZGF0ZSI6ICIyMDI2LTAzLTIyIiwgImZyb20iOiA1LCAidG8iOiA2LCAibm90ZSI6ICJQYXNzYWdlIGRlIE9mZnJlcyBcdTAwZTAgTm90YWlyZSJ9XSwgIl9taWdyYXRlZF9yMiI6IHRydWUsICJyZWxhbmNlX29mZnJlc19kb25lIjogIjIwMjYtMDMtMjEiLCAicmVsYW5jZXMiOiBbeyJkYXRlIjogIjIwMjYtMDMtMjEiLCAiaGV1cmUiOiAiMTk6MDgiLCAidHlwZSI6ICJvZmZyZXMiLCAibm90ZSI6ICJSZWxhbmNlIGFjY29tcGxpZSBcdTI3MTMiLCAiZG9uZSI6IHRydWV9XSwgIm5vdGFpcmUiOiAiTWUgSk9TU0VUIiwgImRhdGVTaWduYXR1cmVQcmV2dWUiOiAiMjAyNi0wMy0yNCIsICJtb250YW50QmllbkRlZmluaXRpZiI6ICIiLCAiaG9ub3JhaXJlc0hUIjogIjI4MDAiLCAibm90ZXNOb3RhaXJlIjogIiJ9LCB7ImlkIjogIkRPUy0wMDYiLCAicGhhc2UiOiA1LCAibm9tIjogIlRVU1NFQVUiLCAicHJlbm9tIjogIkpFUkVNWSIsICJ0ZWxlcGhvbmUiOiAiMDc4MjI5MjIwOSIsICJlbWFpbCI6ICJqLnR1c3NlYXUuZyIsICJnZXN0aW9ubmFpcmUiOiAiTWFyaWUgTGFtYmVydCIsICJ0eXBlQ29udGFjdCI6ICJDb21wcm9taXMgc2lnblx1MDBlOSIsICJtb250YW50QmllbkVzdGltZSI6IDIyMDAwMCwgImFwcG9ydCI6IDI1MDAwLCAicmV2ZW51cyI6IDM5MDAsICJkYXRlUjEiOiAiMjAyNi0wMS0wNyIsICJyZXN1bHRhdFIxIjogIlF1YWxpZmlcdTAwZTkiLCAiZGF0ZU1hbmRhdCI6ICIyMDI2LTAxLTEyIiwgIm1vbnRhbnRCaWVuIjogMjE4MDAwLCAibW9udGFudFByZXQiOiAxOTMwMDAsICJkdXJlZSI6IDI1LCAiYmFucXVlQ2hvaXNpZSI6ICJCTlAgUGFyaWJhcyIsICJ0YXV4UmV0ZW51IjogIjMuNDIiLCAiZGF0ZU9mZnJlcyI6ICIyMDI2LTAzLTIwIiwgImRhdGVMaW1pdGVBY2NlcHRhdGlvbiI6ICIyMDI2LTAzLTMwIiwgInRhZWciOiAiMy42OCIsICJhc3N1cmFuY2UiOiAiMC4yNCIsICJoaXN0b3J5IjogW3siZGF0ZSI6ICIyMDI2LTAxLTA3IiwgImZyb20iOiAtMSwgInRvIjogMCwgIm5vdGUiOiAiQ3JcdTAwZTlhdGlvbiJ9LCB7ImRhdGUiOiAiMjAyNi0wMS0xMiIsICJmcm9tIjogMCwgInRvIjogMSwgIm5vdGUiOiAiTWFuZGF0In0sIHsiZGF0ZSI6ICIyMDI2LTAxLTE5IiwgImZyb20iOiAxLCAidG8iOiAyLCAibm90ZSI6ICJCTlAgY2hvaXNpZSJ9LCB7ImRhdGUiOiAiMjAyNi0wMS0yNyIsICJmcm9tIjogMiwgInRvIjogMywgIm5vdGUiOiAiUkRWIEJOUCJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0wNSIsICJmcm9tIjogMywgInRvIjogNCwgIm5vdGUiOiAiT2ZmcmVzIFx1MDBlOWRpdFx1MDBlOWVzIn1dLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZX0sIHsiaWQiOiAiRE9TLTAwNyIsICJwaGFzZSI6IDIsICJub20iOiAiQkVSTkFSRCIsICJwcmVub20iOiAiRUxTQSIsICJ0ZWxlcGhvbmUiOiAiMDY2MzUyNTkyNiIsICJlbWFpbCI6ICJGQU1JTExFQkVSTkFSRDUzQEdNQUlMLENPTSIsICJnZXN0aW9ubmFpcmUiOiAiIiwgInR5cGVDb250YWN0IjogIkNvbXByb21pcyBzaWduXHUwMGU5IiwgIm1vbnRhbnRCaWVuRXN0aW1lIjogIjI3Njc1MCIsICJhcHBvcnQiOiAiNDAwMDAiLCAicmV2ZW51cyI6ICI3NTAwIiwgImRhdGVSMSI6ICIyMDI2LTAzLTE4IiwgInJlc3VsdGF0UjEiOiAiUXVhbGlmaVx1MDBlOSIsICJub3Rlc1IxIjogIiIsICJoaXN0b3J5IjogW3siZGF0ZSI6ICIyMDI2LTAzLTE4IiwgImZyb20iOiAtMSwgInRvIjogMCwgIm5vdGUiOiAiQ3JcdTAwZTlhdGlvbiBkdSBkb3NzaWVyIn0sIHsiZGF0ZSI6ICIyMDI2LTAzLTIxIiwgImZyb20iOiAwLCAidG8iOiAxLCAibm90ZSI6ICJQYXNzYWdlIGRlIFIxIFx1MDBlMCBSMiJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0yNCIsICJmcm9tIjogMSwgInRvIjogMiwgIm5vdGUiOiAiUGFzc2FnZSBkZSBSMiBcdTAwZTAgTWFuZGF0In1dLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZSwgImRhdGVSMiI6ICIyMDI2LTAzLTIxIiwgInR5cGVQcm9tZXNzZSI6ICJQcm9tZXNzZSBkZSB2ZW50ZSBzaWduXHUwMGU5ZSIsICJkYXRlUHJvbWVzc2UiOiAiMjAyNi0wMi0xMiIsICJtb250YW50QmllbkRlZiI6ICIyNzYwMDAiLCAiYXBwb3J0Q29uZmlybWUiOiAiNDAwMDAiLCAibm90ZXNSMiI6ICIiLCAiZGF0ZU1hbmRhdCI6ICIyMDI2LTAzLTI0IiwgIm1vbnRhbnRCaWVuIjogIjI3NjUwMCIsICJtb250YW50UHJldCI6ICIyMzcwMDAiLCAiZHVyZWUiOiAiIiwgImhvbm9yYWlyZXNNYW5kYXQiOiAiIiwgIm5vdGVzTWFuZGF0IjogIiJ9LCB7ImlkIjogIkRPUy0wMDgiLCAicGhhc2UiOiA4LCAibm9tIjogIlRlc3QiLCAicHJlbm9tIjogIkNocmlzdG9waGUiLCAidGVsZXBob25lIjogIjA2MDYwNjA3MDciLCAiZW1haWwiOiAiYy5zZWdyZXRhaW5AY2FmcGkuZnIiLCAiZ2VzdGlvbm5haXJlIjogIiIsICJ0eXBlQ29udGFjdCI6ICIiLCAibW9udGFudEJpZW5Fc3RpbWUiOiAiIiwgImFwcG9ydCI6ICIiLCAicmV2ZW51cyI6ICIiLCAiZGF0ZVIxIjogIjIwMjYtMDMtMTgiLCAicmVzdWx0YXRSMSI6ICIiLCAibm90ZXNSMSI6ICIiLCAiaGlzdG9yeSI6IFt7ImRhdGUiOiAiMjAyNi0wMy0xOCIsICJmcm9tIjogLTEsICJ0byI6IDAsICJub3RlIjogIkNyXHUwMGU5YXRpb24gZHUgZG9zc2llciJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0xOCIsICJmcm9tIjogMCwgInRvIjogNywgIm5vdGUiOiAiQWJhbmRvbiA6IFByb2pldCBub24gbWF0dXJlIn1dLCAiYWJhbmRvbk1vdGlmIjogIlByb2pldCBub24gbWF0dXJlIiwgImFiYW5kb25SZWxhbmNlIjogIk5vbiIsICJhYmFuZG9uTm90ZXMiOiAiIiwgImFiYW5kb25QaGFzZSI6ICJQaGFzZSAxIFx1MjAxMyBSMSIsICJfbWlncmF0ZWRfcjIiOiB0cnVlfSwgeyJpZCI6ICJET1MtMDA5IiwgInBoYXNlIjogMiwgIm5vbSI6ICJST1lORUwiLCAicHJlbm9tIjogIk1BUklBTkEiLCAidGVsZXBob25lIjogIjA2ODU4NTAwNTMiLCAiZW1haWwiOiAibWFyaWFuYS5yb3luZWxAZ21haWwuY29tIiwgImdlc3Rpb25uYWlyZSI6ICIiLCAidHlwZUNvbnRhY3QiOiAiQ29tcHJvbWlzIHNpZ25cdTAwZTkiLCAibW9udGFudEJpZW5Fc3RpbWUiOiAiMjIwMDAwIiwgImFwcG9ydCI6ICIzMDAwMCIsICJyZXZlbnVzIjogIjQyMDAiLCAiZGF0ZVIxIjogIjIwMjYtMDMtMTIiLCAicmVzdWx0YXRSMSI6ICJRdWFsaWZpXHUwMGU5IiwgIm5vdGVzUjEiOiAiIiwgImhpc3RvcnkiOiBbeyJkYXRlIjogIjIwMjYtMDMtMTIiLCAiZnJvbSI6IC0xLCAidG8iOiAwLCAibm90ZSI6ICJDclx1MDBlOWF0aW9uIGR1IGRvc3NpZXIifSwgeyJkYXRlIjogIjIwMjYtMDMtMTkiLCAiZnJvbSI6IDAsICJ0byI6IDEsICJub3RlIjogIlBhc3NhZ2UgZGUgUjEgXHUwMGUwIE1hbmRhdCJ9XSwgImRhdGVNYW5kYXQiOiAiMjAyNi0wMy0xOSIsICJtb250YW50QmllbiI6ICIyMjAwMDAiLCAibW9udGFudFByZXQiOiAiIiwgImR1cmVlIjogIjI1IiwgImhvbm9yYWlyZXNNYW5kYXQiOiAiIiwgIm5vdGVzTWFuZGF0IjogIlRSQVZBVVggNzQwMDAiLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZX0sIHsiaWQiOiAiRE9TLTAxMCIsICJwaGFzZSI6IDAsICJub20iOiAiTEVGUklMRVVYIiwgInByZW5vbSI6ICJMQVVSRU5UIiwgInRlbGVwaG9uZSI6ICIwNjMwMzc4OTQ2IiwgImVtYWlsIjogImR1Y2F0bWFuMzdAZ21haWwuY29tIiwgImdlc3Rpb25uYWlyZSI6ICIiLCAidHlwZUNvbnRhY3QiOiAiT2ZmcmUgYWNjZXB0XHUwMGU5ZSIsICJtb250YW50QmllbkVzdGltZSI6ICIxNzAwMDAiLCAiYXBwb3J0IjogIjYwMDAwIiwgInJldmVudXMiOiAiMzY3NSIsICJkYXRlUjEiOiAiMjAyNi0wMy0xNiIsICJyZXN1bHRhdFIxIjogIlF1YWxpZmlcdTAwZTkiLCAibm90ZXNSMSI6ICIiLCAiaGlzdG9yeSI6IFt7ImRhdGUiOiAiMjAyNi0wMy0xNiIsICJmcm9tIjogLTEsICJ0byI6IDAsICJub3RlIjogIkNyXHUwMGU5YXRpb24gZHUgZG9zc2llciJ9XSwgIl9taWdyYXRlZF9yMiI6IHRydWV9LCB7ImlkIjogIkRPUy0wMTEiLCAicGhhc2UiOiAwLCAibm9tIjogIkxFRkVCVlJFIiwgInByZW5vbSI6ICJBREVMSU5FIiwgInRlbGVwaG9uZSI6ICIwNyA3OCAzNCAwMCAxNSIsICJlbWFpbCI6ICJsZWZlYnZyZWFkZWxpbmVAaG90bWFpbC5jb20iLCAiZ2VzdGlvbm5haXJlIjogIiIsICJ0eXBlQ29udGFjdCI6ICIiLCAibW9udGFudEJpZW5Fc3RpbWUiOiAiIiwgImFwcG9ydCI6ICIiLCAicmV2ZW51cyI6ICIiLCAiZGF0ZVIxIjogIjIwMjYtMDMtMjMiLCAicmVzdWx0YXRSMSI6ICIiLCAibm90ZXNSMSI6ICJhY2hhdCB0ZXJyYWluIGV0IGNvbnN0cnVjdGlvblxudm9pdCB1biBtYWl0cmUgZCdvZXV2cmUgZGFucyAyIHNlbWFpbmVzXG5yZHYgMTloMTUiLCAiaGlzdG9yeSI6IFt7ImRhdGUiOiAiMjAyNi0wMy0xOSIsICJmcm9tIjogLTEsICJ0byI6IDAsICJub3RlIjogIkNyXHUwMGU5YXRpb24gZHUgZG9zc2llciJ9XSwgIl9taWdyYXRlZF9yMiI6IHRydWV9LCB7ImlkIjogIkRPUy0wMTIiLCAicGhhc2UiOiAwLCAibm9tIjogIkNBUkxJRVIiLCAicHJlbm9tIjogIlNPUEhJRSIsICJ0ZWxlcGhvbmUiOiAiMDY2MzYzMjkyNCIsICJlbWFpbCI6ICJjYXJsaWVyam91cmRhbkBnbWFpbC5jb20iLCAiZ2VzdGlvbm5haXJlIjogIiIsICJ0eXBlQ29udGFjdCI6ICIiLCAibW9udGFudEJpZW5Fc3RpbWUiOiAiIiwgImFwcG9ydCI6ICIiLCAicmV2ZW51cyI6ICIiLCAiZGF0ZVIxIjogIjIwMjYtMDMtMjQiLCAicmVzdWx0YXRSMSI6ICJcdTAwYzAgcmV0cmF2YWlsbGVyIiwgIm5vdGVzUjEiOiAiYWNoYXQgZCd1biBsb2NhdGlmXG5hYmFuZG9uIGR1IGRvc3NpZXIgY2FyIGxlIGxvY2F0aWYgbmUgY29udmllbnQgcGFzIGF1IHByb2pldCIsICJoaXN0b3J5IjogW3siZGF0ZSI6ICIyMDI2LTAzLTI0IiwgImZyb20iOiAtMSwgInRvIjogMCwgIm5vdGUiOiAiQ3JcdTAwZTlhdGlvbiBkdSBkb3NzaWVyIn1dLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZX0sIHsiaWQiOiAiRE9TLTAxMyIsICJwaGFzZSI6IDMsICJub20iOiAiVkFOVkVSREVHSEVNIiwgInByZW5vbSI6ICJDSEFSTE9UVEUiLCAidGVsZXBob25lIjogIjA2NzQ1Njk4NzYiLCAiZW1haWwiOiAidmFudmVyZGVnaGVtLmNAZ21haWwuY29tIiwgImdlc3Rpb25uYWlyZSI6ICIiLCAidHlwZUNvbnRhY3QiOiAiQ29tcHJvbWlzIHNpZ25cdTAwZTkiLCAibW9udGFudEJpZW5Fc3RpbWUiOiAiMTM1MDAwIiwgImFwcG9ydCI6ICIzNTAwMCIsICJyZXZlbnVzIjogIjIxMDAiLCAiZGF0ZVIxIjogIjIwMjYtMDMtMDYiLCAicmVzdWx0YXRSMSI6ICJRdWFsaWZpXHUwMGU5IiwgIm5vdGVzUjEiOiAiIiwgImhpc3RvcnkiOiBbeyJkYXRlIjogIjIwMjYtMDMtMDYiLCAiZnJvbSI6IC0xLCAidG8iOiAwLCAibm90ZSI6ICJDclx1MDBlOWF0aW9uIGR1IGRvc3NpZXIifSwgeyJkYXRlIjogIjIwMjYtMDMtMTkiLCAiZnJvbSI6IDAsICJ0byI6IDEsICJub3RlIjogIlBhc3NhZ2UgZGUgUjEgXHUwMGUwIE1hbmRhdCJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0xOSIsICJmcm9tIjogMSwgInRvIjogMiwgIm5vdGUiOiAiUGFzc2FnZSBkZSBNYW5kYXQgXHUwMGUwIEJhbnF1ZXMifV0sICJkYXRlTWFuZGF0IjogIjIwMjYtMDMtMDciLCAibW9udGFudEJpZW4iOiAiOTkwMDAiLCAibW9udGFudFByZXQiOiAiMTM1MDAwIiwgImR1cmVlIjogIjIwIiwgImhvbm9yYWlyZXNNYW5kYXQiOiAiMzAwMCIsICJub3Rlc01hbmRhdCI6ICI1NTAwMCBkZSB0cmF2YXV4IiwgImRhdGVJbnRlcnJvIjogIjIwMjYtMDMtMTMiLCAiYmFucXVlMSI6ICJjcmVkaXQgbXV0dWVsIiwgInRhdXgxIjogIiIsICJiYW5xdWUyIjogImNyZWRpdCBhZ3JpY29sZSIsICJ0YXV4MiI6ICIiLCAiYmFucXVlMyI6ICJicGdvIiwgInRhdXgzIjogIiIsICJiYW5xdWVDaG9pc2llIjogImNyZWRpdCBhZ3JpY29sZSIsICJ0YXV4UmV0ZW51IjogIjEsMjYiLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZX0sIHsiaWQiOiAiRE9TLTAxNCIsICJwaGFzZSI6IDIsICJub20iOiAiTEVURVNTSUVSIiwgInByZW5vbSI6ICJBTkFJUyIsICJ0ZWxlcGhvbmUiOiAiMDc4NDk0NjE3MiIsICJlbWFpbCI6ICJhbmFpcy5sdHNzckBnbWFpbC5jb20iLCAiZ2VzdGlvbm5haXJlIjogIiIsICJ0eXBlQ29udGFjdCI6ICJPZmZyZSBhY2NlcHRcdTAwZTllIiwgIm1vbnRhbnRCaWVuRXN0aW1lIjogIjc0MDAwIiwgImFwcG9ydCI6ICIwIiwgInJldmVudXMiOiAiMTY1MCIsICJkYXRlUjEiOiAiMjAyNi0wMi0yNSIsICJyZXN1bHRhdFIxIjogIlF1YWxpZmlcdTAwZTkiLCAibm90ZXNSMSI6ICIiLCAiaGlzdG9yeSI6IFt7ImRhdGUiOiAiMjAyNi0wMy0xOSIsICJmcm9tIjogLTEsICJ0byI6IDAsICJub3RlIjogIkNyXHUwMGU5YXRpb24gZHUgZG9zc2llciJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0xOSIsICJmcm9tIjogMCwgInRvIjogMSwgIm5vdGUiOiAiUGFzc2FnZSBkZSBSMSBcdTAwZTAgTWFuZGF0In1dLCAiZGF0ZU1hbmRhdCI6ICIyMDI2LTAyLTI2IiwgIm1vbnRhbnRCaWVuIjogIjc0MDAwIiwgIm1vbnRhbnRQcmV0IjogIjEyMTAwMCIsICJkdXJlZSI6ICIyNSIsICJob25vcmFpcmVzTWFuZGF0IjogIjMwMDAiLCAibm90ZXNNYW5kYXQiOiAiMzUwMDAgZGUgdHJhdmF1eCIsICJfbWlncmF0ZWRfcjIiOiB0cnVlfSwgeyJpZCI6ICJET1MtMDE1IiwgInBoYXNlIjogMiwgIm5vbSI6ICJPRkZSRVQiLCAicHJlbm9tIjogIkdBQlJJRUxMRSIsICJ0ZWxlcGhvbmUiOiAiMDY0MzQyMTQ4MyIsICJlbWFpbCI6ICJvZmZyZXRnQGhvdG1haWwuZmZyIiwgImdlc3Rpb25uYWlyZSI6ICIiLCAidHlwZUNvbnRhY3QiOiAiT2ZmcmUgYWNjZXB0XHUwMGU5ZSIsICJtb250YW50QmllbkVzdGltZSI6ICIxNzkwMDAiLCAiYXBwb3J0IjogIjUwMDAiLCAicmV2ZW51cyI6ICI0MzUwIiwgImRhdGVSMSI6ICIyMDI2LTAzLTE2IiwgInJlc3VsdGF0UjEiOiAiUXVhbGlmaVx1MDBlOSIsICJub3Rlc1IxIjogImFjaGF0IGF2ZWMgdHJhdmF1eCBkZSA3MDAwMFx1MjBhYyIsICJoaXN0b3J5IjogW3siZGF0ZSI6ICIyMDI2LTAzLTE2IiwgImZyb20iOiAtMSwgInRvIjogMCwgIm5vdGUiOiAiQ3JcdTAwZTlhdGlvbiBkdSBkb3NzaWVyIn0sIHsiZGF0ZSI6ICIyMDI2LTAzLTIxIiwgImZyb20iOiAwLCAidG8iOiAxLCAibm90ZSI6ICJQYXNzYWdlIGRlIFIxIFx1MDBlMCBSMiJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0yNCIsICJmcm9tIjogMSwgInRvIjogMiwgIm5vdGUiOiAiUGFzc2FnZSBkZSBSMiBcdTAwZTAgTWFuZGF0In1dLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZSwgImRhdGVSMiI6ICIyMDI2LTAzLTIzIiwgInR5cGVQcm9tZXNzZSI6ICJPZmZyZSBkJ2FjaGF0IGFjY2VwdFx1MDBlOWUiLCAiZGF0ZVByb21lc3NlIjogIjIwMjYtMDMtMzAiLCAibW9udGFudEJpZW5EZWYiOiAiMTc5MDAwIiwgImFwcG9ydENvbmZpcm1lIjogIjUwMDAiLCAibm90ZXNSMiI6ICJ0cmF2YXV4IDcwMDAwIiwgImRhdGVNYW5kYXQiOiAiMjAyNS0wMy0yNSIsICJtb250YW50QmllbiI6ICIxNzkwMDAiLCAibW9udGFudFByZXQiOiAiMjUwMDAwIiwgImR1cmVlIjogIjI1IiwgImhvbm9yYWlyZXNNYW5kYXQiOiAiIiwgIm5vdGVzTWFuZGF0IjogIiJ9LCB7ImlkIjogIkRPUy0wMTYiLCAicGhhc2UiOiA4LCAibm9tIjogIlNFR1JFVEFJTiIsICJwcmVub20iOiAiQ0hSSVNUT1BIRSIsICJ0ZWxlcGhvbmUiOiAiMDYxOTQ4OTcwOCIsICJlbWFpbCI6ICJjLnNlZ3JldGFpbjUzQGdtYWlsLmNvbSIsICJnZXN0aW9ubmFpcmUiOiAiIiwgInR5cGVDb250YWN0IjogIiIsICJtb250YW50QmllbkVzdGltZSI6ICIiLCAiYXBwb3J0IjogIiIsICJyZXZlbnVzIjogIiIsICJkYXRlUjEiOiAiMjAyNi0wMy0xOSIsICJyZXN1bHRhdFIxIjogIiIsICJub3Rlc1IxIjogIiIsICJoaXN0b3J5IjogW3siZGF0ZSI6ICIyMDI2LTAzLTE5IiwgImZyb20iOiAtMSwgInRvIjogMCwgIm5vdGUiOiAiQ3JcdTAwZTlhdGlvbiBkdSBkb3NzaWVyIn0sIHsiZGF0ZSI6ICIyMDI2LTAzLTE5IiwgImZyb20iOiAwLCAidG8iOiA3LCAibm90ZSI6ICJBYmFuZG9uIDogQ2xpZW50IG5vbiByXHUwMGU5cG9uZGFudCJ9XSwgImFiYW5kb25Nb3RpZiI6ICJDbGllbnQgbm9uIHJcdTAwZTlwb25kYW50IiwgImFiYW5kb25SZWxhbmNlIjogIk5vbiIsICJhYmFuZG9uTm90ZXMiOiAiIiwgImFiYW5kb25QaGFzZSI6ICJQaGFzZSAxIFx1MjAxMyBSMSIsICJfbWlncmF0ZWRfcjIiOiB0cnVlfSwgeyJpZCI6ICJET1MtMDE3IiwgInBoYXNlIjogMCwgIm5vbSI6ICJKT1VBVUxUIiwgInByZW5vbSI6ICJNQVJDIiwgInRlbGVwaG9uZSI6ICIwNjg4MDE3NzU0IiwgImVtYWlsIjogImJpbWl0aUBob3RtYWlsLmZyIiwgImdlc3Rpb25uYWlyZSI6ICIiLCAidHlwZUNvbnRhY3QiOiAiRW4gcmVjaGVyY2hlIGRlIGJpZW4iLCAibW9udGFudEJpZW5Fc3RpbWUiOiAiIiwgImFwcG9ydCI6ICIiLCAicmV2ZW51cyI6ICIyMTAwIiwgImRhdGVSMSI6ICIyMDI2LTAzLTIzIiwgInJlc3VsdGF0UjEiOiAiIiwgIm5vdGVzUjEiOiAiQ0FMQ1VMIEQnRU5WRUxPUFBFIiwgImhpc3RvcnkiOiBbeyJkYXRlIjogIjIwMjYtMDMtMjMiLCAiZnJvbSI6IC0xLCAidG8iOiAwLCAibm90ZSI6ICJDclx1MDBlOWF0aW9uIGR1IGRvc3NpZXIifV0sICJfbWlncmF0ZWRfcjIiOiB0cnVlfSwgeyJpZCI6ICJET1MtMDE4IiwgInBoYXNlIjogMCwgIm5vbSI6ICJST05ERUFVIiwgInByZW5vbSI6ICJST01BSU4iLCAidGVsZXBob25lIjogIjA3NjQ1NDMzNjYiLCAiZW1haWwiOiAicm9uZGVhdS5yQGdtYWlsLmNvbSIsICJnZXN0aW9ubmFpcmUiOiAiIiwgInR5cGVDb250YWN0IjogIiIsICJtb250YW50QmllbkVzdGltZSI6ICIiLCAiYXBwb3J0IjogIiIsICJyZXZlbnVzIjogIiIsICJkYXRlUjEiOiAiMjAyNi0wMy0yNSIsICJyZXN1bHRhdFIxIjogIiIsICJub3Rlc1IxIjogIiIsICJoaXN0b3J5IjogW3siZGF0ZSI6ICIyMDI2LTAzLTI1IiwgImZyb20iOiAtMSwgInRvIjogMCwgIm5vdGUiOiAiQ3JcdTAwZTlhdGlvbiBkdSBkb3NzaWVyIn1dLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZX0sIHsiaWQiOiAiRE9TLTAxOSIsICJwaGFzZSI6IDEsICJub20iOiAiQk9OVEVNUFMiLCAicHJlbm9tIjogIk1BVEhJUyIsICJ0ZWxlcGhvbmUiOiAiMDY2ODUzNDE4NSIsICJlbWFpbCI6ICJtYXRoaXMuYnRwc0BnbWFpbC5jb20iLCAiZ2VzdGlvbm5haXJlIjogIiIsICJ0eXBlQ29udGFjdCI6ICJPZmZyZSBhY2NlcHRcdTAwZTllIiwgIm1vbnRhbnRCaWVuRXN0aW1lIjogIiIsICJhcHBvcnQiOiAiIiwgInJldmVudXMiOiAiMzEwMCIsICJkYXRlUjEiOiAiMjAyNi0wMy0yMyIsICJyZXN1bHRhdFIxIjogIlF1YWxpZmlcdTAwZTkiLCAibm90ZXNSMSI6ICIiLCAiaGlzdG9yeSI6IFt7ImRhdGUiOiAiMjAyNi0wMy0yMyIsICJmcm9tIjogLTEsICJ0byI6IDAsICJub3RlIjogIkNyXHUwMGU5YXRpb24gZHUgZG9zc2llciJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0yMSIsICJmcm9tIjogMCwgInRvIjogMSwgIm5vdGUiOiAiUGFzc2FnZSBkZSBSMSBcdTAwZTAgUjIifV0sICJfbWlncmF0ZWRfcjIiOiB0cnVlLCAiZGF0ZVIyIjogIjIwMjYtMDMtMjUiLCAidHlwZVByb21lc3NlIjogIk9mZnJlIGQnYWNoYXQgYWNjZXB0XHUwMGU5ZSIsICJkYXRlUHJvbWVzc2UiOiAiMjAyNi0wMy0zMCIsICJtb250YW50QmllbkRlZiI6ICIiLCAiYXBwb3J0Q29uZmlybWUiOiAiIiwgIm5vdGVzUjIiOiAiIn0sIHsiaWQiOiAiRE9TLTAyMCIsICJwaGFzZSI6IDIsICJub20iOiAiTUFST0xMRUFVIiwgInByZW5vbSI6ICJDQVRIRVJJTkUiLCAidGVsZXBob25lIjogIjA2NzcxNjUxMjUiLCAiZW1haWwiOiAiY2F0aGUxMTVAaG90bWFpbC5mciIsICJnZXN0aW9ubmFpcmUiOiAiIiwgInR5cGVDb250YWN0IjogIiIsICJtb250YW50QmllbkVzdGltZSI6ICIzNTUwMDAiLCAiYXBwb3J0IjogIjgwMDAwIiwgInJldmVudXMiOiAiNzUwMCIsICJkYXRlUjEiOiAiMjAyNi0wMy0wNSIsICJyZXN1bHRhdFIxIjogIiIsICJub3Rlc1IxIjogIlRSQVZBVVggMzAwMDAiLCAiaGlzdG9yeSI6IFt7ImRhdGUiOiAiMjAyNi0wMy0wNSIsICJmcm9tIjogLTEsICJ0byI6IDAsICJub3RlIjogIkNyXHUwMGU5YXRpb24gZHUgZG9zc2llciJ9LCB7ImRhdGUiOiAiMjAyNi0wMy0yMCIsICJmcm9tIjogMCwgInRvIjogMSwgIm5vdGUiOiAiUGFzc2FnZSBkZSBSMSBcdTAwZTAgTWFuZGF0In1dLCAiZGF0ZU1hbmRhdCI6ICIyMDI2LTAzLTA3IiwgIm1vbnRhbnRCaWVuIjogIjM1NTAwMCIsICJtb250YW50UHJldCI6ICIzNDMwMDAiLCAiZHVyZWUiOiAiMjUiLCAiaG9ub3JhaXJlc01hbmRhdCI6ICIyODAwIiwgIm5vdGVzTWFuZGF0IjogIiIsICJfbWlncmF0ZWRfcjIiOiB0cnVlfSwgeyJpZCI6ICJET1MtMDIxIiwgInBoYXNlIjogMCwgIm5vbSI6ICJDT0NRVUVUIiwgInByZW5vbSI6ICJTVEVWRU4iLCAidGVsZXBob25lIjogIjA3ODgyNjQwOTkiLCAiZW1haWwiOiAiY29jcXVldC5zdGV2ZW4xNUBnbWFpbC5jb20iLCAiZ2VzdGlvbm5haXJlIjogIiIsICJ0eXBlQ29udGFjdCI6ICJFbiByZWNoZXJjaGUgZGUgYmllbiIsICJtb250YW50QmllbkVzdGltZSI6ICIiLCAiYXBwb3J0IjogIiIsICJyZXZlbnVzIjogIiIsICJkYXRlUjEiOiAiMjAyNi0wMy0xNyIsICJyZXN1bHRhdFIxIjogIlx1MDBjMCByZXRyYXZhaWxsZXIiLCAibm90ZXNSMSI6ICIiLCAiaGlzdG9yeSI6IFt7ImRhdGUiOiAiMjAyNi0wMy0xNyIsICJmcm9tIjogLTEsICJ0byI6IDAsICJub3RlIjogIkNyXHUwMGU5YXRpb24gZHUgZG9zc2llciJ9XSwgIl9taWdyYXRlZF9yMiI6IHRydWV9LCB7ImlkIjogIkRPUy0wMjIiLCAicGhhc2UiOiAwLCAibm9tIjogIlBPTExJU1NBUkQiLCAicHJlbm9tIjogIlNPTklBIiwgInRlbGVwaG9uZSI6ICIwNjg3MTAwNDI3IiwgImVtYWlsIjogInNvbmlhLnBvbGxpc3NhcmRAeWFob28uZnIiLCAiZ2VzdGlvbm5haXJlIjogIiIsICJ0eXBlQ29udGFjdCI6ICIiLCAibW9udGFudEJpZW5Fc3RpbWUiOiAiMjQwMDAwIiwgImFwcG9ydCI6ICIwIiwgInJldmVudXMiOiAiNTIwMCIsICJkYXRlUjEiOiAiMjAyNi0wMy0xNyIsICJyZXN1bHRhdFIxIjogIlF1YWxpZmlcdTAwZTkiLCAibm90ZXNSMSI6ICJyYWNoYXQgZGUgc291bHRlIiwgImhpc3RvcnkiOiBbeyJkYXRlIjogIjIwMjYtMDMtMTciLCAiZnJvbSI6IC0xLCAidG8iOiAwLCAibm90ZSI6ICJDclx1MDBlOWF0aW9uIGR1IGRvc3NpZXIifV0sICJfbWlncmF0ZWRfcjIiOiB0cnVlfSwgeyJpZCI6ICJET1MtMDIzIiwgInBoYXNlIjogMCwgIm5vbSI6ICJHQUlMTEFSRCIsICJwcmVub20iOiAiQU5USE9OWSIsICJ0ZWxlcGhvbmUiOiAiMDY1NTIxNDE5NzEiLCAiZW1haWwiOiAiYW50aG9ueS5nYWlsbGFyZDhAZ21haWwuY29tIiwgImdlc3Rpb25uYWlyZSI6ICIiLCAidHlwZUNvbnRhY3QiOiAiT2ZmcmUgYWNjZXB0XHUwMGU5ZSIsICJtb250YW50QmllbkVzdGltZSI6ICIiLCAiYXBwb3J0IjogIiIsICJyZXZlbnVzIjogIjM2MDAiLCAiZGF0ZVIxIjogIjIwMjYtMDMtMTAiLCAicmVzdWx0YXRSMSI6ICJRdWFsaWZpXHUwMGU5IiwgIm5vdGVzUjEiOiAiIiwgImhpc3RvcnkiOiBbeyJkYXRlIjogIjIwMjYtMDMtMTAiLCAiZnJvbSI6IC0xLCAidG8iOiAwLCAibm90ZSI6ICJDclx1MDBlOWF0aW9uIGR1IGRvc3NpZXIifV0sICJfbWlncmF0ZWRfcjIiOiB0cnVlfSwgeyJpZCI6ICJET1MtMDI0IiwgInBoYXNlIjogMCwgIm5vbSI6ICJCUlVORVQiLCAicHJlbm9tIjogIkNBTUlMTEUiLCAidGVsZXBob25lIjogIjA2IDQ5IDQxIDgyIDQ0IiwgImVtYWlsIjogImJydW5ldGNhbWlsbGUxOTAzQGdtYWlsLmNvbSIsICJ0eXBlQ29udGFjdCI6ICJDb21wcm9taXMgc2lnblx1MDBlOSIsICJtb250YW50QmllbkVzdGltZSI6ICIiLCAiYXBwb3J0IjogIiIsICJkYXRlUjEiOiAiMjAyNi0wMy0yNCIsICJyZXN1bHRhdFIxIjogIiIsICJub3Rlc1IxIjogIiIsICJoaXN0b3J5IjogW3siZGF0ZSI6ICIyMDI2LTAzLTI0IiwgImZyb20iOiAtMSwgInRvIjogMCwgIm5vdGUiOiAiQ3JcdTAwZTlhdGlvbiBkdSBkb3NzaWVyIn1dLCAiX21pZ3JhdGVkX3IyIjogdHJ1ZX1dLCAibmV4dElkIjogMjV9'));
+  state.dossiers = raw.dossiers;
+  state.nextId = raw.nextId;
+}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  renderSidebar();
+  renderMain();
+}
+
+function renderSidebar() {
+  const counts = {};
+  PHASES.forEach(p => counts[p.id] = 0);
+  state.dossiers.forEach(d => counts[d.phase] = (counts[d.phase]||0) + 1);
+
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = `
+    <div class="sidebar-section">Navigation</div>
+    <div class="nav-item ${state.currentView==='dashboard'?'active':''}" style="--phase-color:var(--p2)" onclick="setView('dashboard')">
+      <span>📊</span><span class="nav-label">Tableau de bord</span>
+    </div>
+    <div class="nav-item ${state.currentView==='agenda'?'active':''}" style="--phase-color:var(--p4)" onclick="setView('agenda')">
+      <span>📅</span><span class="nav-label">Agenda relances</span>
+      <span class="nav-badge" style="${getAgendaUrgentCount()>0?'background:var(--pa);color:#fff;border:none':''}">
+        ${getAgendaUrgentCount()||''}
+      </span>
+    </div>
+    <div class="sidebar-section">Pipeline</div>
+    ${PHASES.map(p => `
+      <div class="nav-item ${state.currentView===p.key?'active':''}" style="--phase-color:${p.color}" onclick="setView('${p.key}')">
+        <span>${p.emoji}</span>
+        <span class="nav-label">${p.short}</span>
+        <span class="nav-badge">${counts[p.id]||0}</span>
+      </div>
+    `).join('')}
+  `;
+}
+
+function renderMain() {
+  const mc = document.getElementById('main-content');
+  mc.innerHTML = '';
+
+  if (state.currentView === 'dashboard') {
+    mc.appendChild(renderDashboard());
+  } else if (state.currentView === 'agenda') {
+    mc.appendChild(renderAgenda());
+  } else {
+    const phase = PHASES.find(p => p.key === state.currentView);
+    if (phase) mc.appendChild(renderPhaseView(phase));
+  }
+}
+
+function renderDashboard() {
+  const div = document.createElement('div');
+  div.className = 'dashboard visible';
+
+  const counts = {};
+  PHASES.forEach(p => counts[p.id] = state.dossiers.filter(d=>d.phase===p.id).length);
+  const totalActif = state.dossiers.filter(d=>d.phase<8).length;
+  const honPercu = state.dossiers.filter(d=>d.phase===7).reduce((s,d)=>s+(parseFloat(d.honorairesHT)||0),0);
+  const honPipeline = state.dossiers.filter(d=>d.phase>0&&d.phase<8).reduce((s,d)=>s+(parseFloat(d.honorairesHT)||0),0);
+
+  div.innerHTML = `
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:20px;">Tableau de bord</h1>
+    ${renderOffresAlertBanner()}
+    ${(() => {
+      const urgents = getAllRelanceItems().filter(i => i.urgence === 'urgent');
+      if (!urgents.length) return '';
+      return `<div class="alert-banner urgent" style="cursor:pointer" onclick="setView('agenda')">
+        <div class="alert-icon">📅</div>
+        <div class="alert-content">
+          <div class="alert-title">${urgents.length} relance${urgents.length>1?'s':''} urgente${urgents.length>1?'s':''} en attente</div>
+          <div class="alert-list">${urgents.map(i=>`<div class="alert-row"><strong>${i.dossier.prenom} ${i.dossier.nom}</strong> <span style="opacity:.8">${i.label}</span></div>`).join('')}</div>
+          <div style="margin-top:8px;font-size:11px;opacity:.7">→ Cliquer pour ouvrir l'agenda</div>
+        </div>
+      </div>`;
+    })()}
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--phase-color:var(--p2)">
+        <div class="kpi-label">Dossiers actifs</div>
+        <div class="kpi-value" style="--phase-color:var(--p2)">${totalActif}</div>
+        <div class="kpi-sub">En cours de traitement</div>
+      </div>
+      <div class="kpi-card" style="--phase-color:var(--p1)">
+        <div class="kpi-label">R1 à qualifier</div>
+        <div class="kpi-value" style="--phase-color:var(--p1)">${counts[0]||0}</div>
+        <div class="kpi-sub">En phase initiale</div>
+      </div>
+      <div class="kpi-card" style="--phase-color:var(--p7)">
+        <div class="kpi-label">Honoraires perçus</div>
+        <div class="kpi-value" style="--phase-color:var(--p7);font-size:22px">${honPercu.toLocaleString('fr-FR')} €</div>
+        <div class="kpi-sub">Phase 7 clôturés</div>
+      </div>
+      <div class="kpi-card" style="--phase-color:var(--p5)">
+        <div class="kpi-label">Honoraires pipeline</div>
+        <div class="kpi-value" style="--phase-color:var(--p5);font-size:22px">${honPipeline.toLocaleString('fr-FR')} €</div>
+        <div class="kpi-sub">Estimés en cours</div>
+      </div>
+    </div>
+
+    <div class="pipeline-viz">
+      <div class="pipeline-title">Pipeline en cours</div>
+      <div class="pipeline-flow">
+        ${PHASES.slice(0,8).map((p,i) => `
+          <div class="pipeline-step" style="--phase-bg:${p.bg};--phase-border:${p.border}" onclick="setView('${p.key}')">
+            <div class="step-num" style="color:${p.color}">${counts[p.id]||0}</div>
+            <div class="step-label">${p.short}</div>
+          </div>
+          ${i<7 ? '<div class="pipeline-arrow">›</div>' : ''}
+        `).join('')}
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+      <div class="pipeline-title">Dossiers récents</div>
+      <div class="cards-grid">
+        ${state.dossiers.slice(-4).reverse().map(d => renderCardHTML(d)).join('')}
+      </div>
+    </div>
+  `;
+  return div;
+}
+
+function renderPhaseView(phase) {
+  const div = document.createElement('div');
+  div.className = 'phase-view visible';
+  div.style.setProperty('--phase-color', phase.color);
+  div.style.setProperty('--phase-bg', phase.bg);
+  div.style.setProperty('--phase-border', phase.border);
+
+  const dossiers = state.dossiers.filter(d => d.phase === phase.id);
+  const subtitle = getPhaseSubtitle(phase.id);
+
+  div.innerHTML = `
+    <div class="phase-header">
+      <div class="phase-title-group">
+        <div class="phase-badge" style="background:${phase.bg};border-color:${phase.border}">${phase.emoji}</div>
+        <div>
+          <div class="phase-title">${phase.name}</div>
+          <div class="phase-subtitle">${subtitle}</div>
+        </div>
+      </div>
+      <span class="phase-count">${dossiers.length} dossier${dossiers.length!==1?'s':''}</span>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" class="search-input" placeholder="Rechercher un client..." id="search-${phase.key}" oninput="filterCards('${phase.key}')">
+    </div>
+
+    ${phase.id === 4 ? renderOffresAlertBanner() : ''}
+
+    <div class="cards-grid" id="cards-${phase.key}">
+      ${dossiers.length > 0
+        ? dossiers.map(d => renderCardHTML(d)).join('')
+        : `<div class="empty-state"><div class="empty-icon">${phase.emoji}</div><p>Aucun dossier en ${phase.short}</p></div>`}
+    </div>
+  `;
+  return div;
+}
+
+function renderCardHTML(dossier) {
+  const phase = PHASES[dossier.phase];
+  const nextPhase = dossier.phase < 7 ? PHASES[dossier.phase + 1] : null;
+  const isAbandonne = dossier.phase === 8;
+  const keyFields = getKeyFields(dossier);
+
+  // Deadline badge for P5
+  let deadlineBadgeHTML = '';
+  let smsCardBtn = '';
+  if (dossier.phase === 5 && dossier.dateLimiteAcceptation) {
+    const j = daysUntilDeadline(dossier.dateLimiteAcceptation);
+    const cls = deadlineClass(j);
+    const dl = new Date(dossier.dateLimiteAcceptation).toLocaleDateString('fr-FR');
+    deadlineBadgeHTML = `<span class="deadline-badge ${cls}" style="margin-top:4px">⏱ ${deadlineLabel(j)} · ${dl}</span>`;
+    const smsClass = (cls === 'urgent' || cls === 'expired') ? 'urgent' : 'ok';
+    smsCardBtn = `<a href="${buildSmsLink(dossier)}" class="btn-sms ${smsClass}">📱 Relance SMS</a>`;
+  }
+
+  // Relance badge for P3 (banques) and P4 (RDV)
+  let relanceBadgeHTML = '';
+  let relanceCardBtn = '';
+  if (dossier.phase === 3 && dossier.dateInterro) {
+    const j = daysSince(dossier.dateInterro);
+    const nbRelances = (dossier.relances||[]).filter(r=>r.type==='banque').length;
+    if (j >= 7) {
+      const cls = j >= 14 ? 'urgent' : 'warning';
+      relanceBadgeHTML = `<span class="deadline-badge ${cls}" style="margin-top:4px">📞 J+${j} sans retour banques · ${nbRelances} relance${nbRelances!==1?'s':''}</span>`;
+      relanceCardBtn = `
+        <a href="${buildSmsRelanceBanque(dossier)}" class="btn-sms ${cls}">📱 SMS banque</a>
+        <button class="btn btn-ghost btn-sm" onclick="openRelanceModal('${dossier.id}','banque')">✏️ Relance</button>`;
+    }
+  }
+  if (dossier.phase === 4 && dossier.dateRdvBanque) {
+    const j = daysSince(dossier.dateRdvBanque);
+    const nbRelances = (dossier.relances||[]).filter(r=>r.type==='rdv').length;
+    if (j >= 7) {
+      const cls = j >= 14 ? 'urgent' : 'warning';
+      relanceBadgeHTML = `<span class="deadline-badge ${cls}" style="margin-top:4px">📞 J+${j} après RDV · ${nbRelances} relance${nbRelances!==1?'s':''}</span>`;
+      relanceCardBtn = `
+        <a href="${buildSmsRelanceRdv(dossier)}" class="btn-sms ${cls}">📱 SMS client</a>
+        <button class="btn btn-ghost btn-sm" onclick="openRelanceModal('${dossier.id}','rdv')">✏️ Relance</button>`;
+    }
+  }
+
+  return `
+    <div class="dossier-card" style="--phase-color:${phase.color}" id="card-${dossier.id}">
+      <div class="card-header">
+        <div>
+          <div class="card-id">${dossier.id}</div>
+          <div class="card-name">${dossier.prenom} ${dossier.nom}</div>
+          <div class="card-phone">${dossier.telephone}${dossier.email ? ' · ' + dossier.email : ''}</div>
+          ${deadlineBadgeHTML}
+          ${relanceBadgeHTML}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="tag tag-info" style="background:${phase.bg};color:${phase.color};border-color:${phase.border}">${phase.emoji} ${phase.short}</span>
+          ${dossier.gestionnaire ? `<span style="font-size:11px;color:var(--text-dim)">${dossier.gestionnaire}</span>` : ''}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-fields">
+          ${keyFields.map(f => `
+            <div class="card-field${f.full?' full':''}">
+              <label>${f.label}</label>
+              <span>${f.value || '–'}</span>
+            </div>
+          `).join('')}
+        </div>
+        ${dossier.notesR1 || dossier.notesMandat || dossier.notesRdv || dossier.notesOffres || dossier.notesNotaire || dossier.notesHonoraires ?
+          `<div class="card-note">💬 ${dossier.notesR1 || dossier.notesMandat || dossier.notesRdv || dossier.notesOffres || dossier.notesNotaire || dossier.notesHonoraires}</div>` : ''}
+      </div>
+      <div class="card-actions">
+        ${smsCardBtn}
+        ${relanceCardBtn}
+        ${!isAbandonne && nextPhase ? `
+          <button class="btn-advance" style="background:${nextPhase.color}" onclick="startTransition('${dossier.id}')">
+            ${nextPhase.emoji} Passer en ${nextPhase.short} →
+          </button>
+        ` : ''}
+        ${dossier.phase === 7 ? `<button class="btn btn-ghost btn-sm" style="flex:1;opacity:0.7">✅ Dossier clôturé</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openEdit('${dossier.id}')" title="Modifier la fiche">✏️</button>
+        ${!isAbandonne && dossier.phase < 8 ? `
+          <button class="btn btn-ghost btn-sm" onclick="openAbandon('${dossier.id}')">🚫</button>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function getKeyFields(d) {
+  const fmt = v => v ? Number(v).toLocaleString('fr-FR') + ' €' : null;
+  const fields = {
+    0: [
+      { label: 'Situation', value: d.typeContact },
+      { label: 'Date R1', value: d.dateR1 },
+      { label: 'Bien estimé', value: fmt(d.montantBienEstime) },
+      { label: 'Apport', value: fmt(d.apport) },
+      { label: 'Résultat R1', value: d.resultatR1 },
+    ],
+    1: [
+      { label: 'Date R2', value: d.dateR2 },
+      { label: 'Type', value: d.typePromesse },
+      { label: 'Date promesse', value: d.datePromesse },
+      { label: 'Montant bien', value: fmt(d.montantBienDef) },
+      { label: 'Apport confirmé', value: fmt(d.apportConfirme) },
+    ],
+    2: [
+      { label: 'Mandat signé', value: d.dateMandat },
+      { label: 'Montant prêt', value: fmt(d.montantPret) },
+      { label: 'Apport', value: fmt(d.apport) },
+      { label: 'Durée', value: d.duree ? d.duree + ' ans' : null },
+      { label: '💶 Honoraires convenus', value: fmt(d.honorairesMandat) },
+    ],
+    3: [
+      { label: 'Banque choisie', value: d.banqueChoisie },
+      { label: 'Taux retenu', value: d.tauxRetenu ? d.tauxRetenu + ' %' : null },
+      { label: 'Montant prêt', value: fmt(d.montantPret) },
+      { label: 'Date interrogation', value: d.dateInterro },
+    ],
+    4: [
+      { label: 'Banque', value: d.banqueChoisie },
+      { label: 'Taux', value: d.tauxRetenu ? d.tauxRetenu + ' %' : null },
+      { label: 'Date RDV', value: d.dateRdvBanque },
+      { label: 'Heure', value: d.heureRdv },
+    ],
+    5: [
+      { label: 'Banque', value: d.banqueChoisie },
+      { label: 'Taux', value: d.tauxRetenu ? d.tauxRetenu + ' %' : null },
+      { label: 'Date offres', value: d.dateOffres },
+      { label: '⏱ Date limite (J+11)', value: d.dateLimiteAcceptation },
+      { label: 'TAEG', value: d.taeg ? d.taeg + ' %' : null },
+      { label: 'Assurance', value: d.assurance ? d.assurance + ' %' : null },
+    ],
+    6: [
+      { label: 'Notaire', value: d.notaire },
+      { label: 'Taux', value: d.tauxRetenu ? d.tauxRetenu + ' %' : null },
+      { label: 'Signature prévue', value: d.dateSignaturePrevue },
+      { label: 'Honoraires HT', value: fmt(d.honorairesHT) },
+    ],
+    7: [
+      { label: 'Banque', value: d.banqueChoisie },
+      { label: 'Taux', value: d.tauxRetenu ? d.tauxRetenu + ' %' : null },
+      { label: 'Signature', value: d.dateSignatureEffective },
+      { label: 'Honoraires HT', value: fmt(d.honorairesHT) },
+      { label: 'Encaissement', value: d.dateEncaissement },
+      { label: 'Mode paiement', value: d.modePaiement },
+    ],
+    8: [
+      { label: 'Motif', value: d.abandonMotif },
+      { label: 'Phase abandon', value: d.abandonPhase },
+      { label: 'Relance', value: d.abandonRelance },
+    ],
+  };
+  return (fields[d.phase] || []).filter(f => f.value);
+}
+
+function getPhaseSubtitle(id) {
+  return [
+    'Premier rendez-vous – qualification initiale du projet',
+    'Client avec promesse ou offre d\'achat – qualification avancée',
+    'Mandat signé – montage et interrogation des banques',
+    'Banques interrogées – le client choisit sa banque',
+    'RDV fixé avec la banque partenaire',
+    'Offres de prêt éditées – en attente d\'acceptation',
+    'Signature de l\'acte chez le notaire',
+    'Dossiers finalisés – honoraires encaissés',
+    'Dossiers non aboutis',
+  ][id] || '';
+}
+
+// ─── OFFRES – DÉLAI J+11 & ALERTES ────────────────────────────────────────────
+function daysUntilDeadline(dateLimite) {
+  if (!dateLimite) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dl = new Date(dateLimite); dl.setHours(0,0,0,0);
+  return Math.round((dl - today) / 86400000);
+}
+
+function deadlineClass(jours) {
+  if (jours === null) return 'ok';
+  if (jours < 0) return 'expired';
+  if (jours <= 2) return 'urgent';
+  if (jours <= 5) return 'warning';
+  return 'ok';
+}
+
+function deadlineLabel(jours) {
+  if (jours === null) return '–';
+  if (jours < 0) return `Expiré il y a ${Math.abs(jours)}j`;
+  if (jours === 0) return '⚠️ Expire AUJOURD\'HUI';
+  if (jours === 1) return '⚠️ Expire DEMAIN';
+  return `J-${jours}`;
+}
+
+function buildSmsLink(dossier) {
+  const jours = daysUntilDeadline(dossier.dateLimiteAcceptation);
+  const dl = dossier.dateLimiteAcceptation ? new Date(dossier.dateLimiteAcceptation).toLocaleDateString('fr-FR') : '?';
+  let msg;
+  if (jours !== null && jours <= 0) {
+    msg = `Bonjour ${dossier.prenom}, je reviens vers vous concernant votre offre de prêt ${dossier.banqueChoisie || ''}. Le délai de réflexion légal de 11 jours est arrivé à échéance. Pouvez-vous me confirmer votre décision ? Je reste disponible. Cordialement.`;
+  } else if (jours !== null && jours <= 2) {
+    msg = `Bonjour ${dossier.prenom}, votre offre de prêt ${dossier.banqueChoisie || ''} expire le ${dl}. Pensez à me confirmer votre accord rapidement. Je reste disponible pour toute question. Cordialement.`;
+  } else {
+    msg = `Bonjour ${dossier.prenom}, je vous rappelle que votre offre de prêt ${dossier.banqueChoisie || ''} (taux ${dossier.tauxRetenu || ''}%) doit être acceptée avant le ${dl}. N'hésitez pas à me contacter. Cordialement.`;
+  }
+  const tel = dossier.telephone.replace(/\s/g, '');
+  return `sms:${tel}?body=${encodeURIComponent(msg)}`;
+}
+
+function renderOffresAlertBanner() {
+  const offres = state.dossiers.filter(d => d.phase === 5 && d.dateLimiteAcceptation);
+  if (offres.length === 0) return '';
+
+  const urgent = offres.filter(d => { const j = daysUntilDeadline(d.dateLimiteAcceptation); return j !== null && j <= 2; });
+  const warning = offres.filter(d => { const j = daysUntilDeadline(d.dateLimiteAcceptation); return j !== null && j > 2 && j <= 5; });
+
+  if (urgent.length === 0 && warning.length === 0) return '';
+
+  const level = urgent.length > 0 ? 'urgent' : 'warning';
+  const icon = urgent.length > 0 ? '🚨' : '⏰';
+  const title = urgent.length > 0
+    ? `${urgent.length} offre${urgent.length>1?'s':''} expire${urgent.length>1?'nt':''} dans moins de 48h !`
+    : `${warning.length} offre${warning.length>1?'s':''} à surveiller – délai inférieur à 5 jours`;
+
+  const rows = [...urgent, ...warning].map(d => {
+    const j = daysUntilDeadline(d.dateLimiteAcceptation);
+    const cls = deadlineClass(j);
+    const smsClass = cls === 'urgent' || cls === 'expired' ? 'urgent' : 'ok';
+    return `<div class="alert-row">
+      <strong>${d.prenom} ${d.nom}</strong>
+      <span class="deadline-badge ${cls}">${deadlineLabel(j)}</span>
+      <span style="color:var(--text-dim);font-size:11px">${d.banqueChoisie||''} · ${d.telephone}</span>
+      <a href="${buildSmsLink(d)}" class="btn-sms ${smsClass}">📱 SMS client</a>
+    </div>`;
+  }).join('');
+
+  return `<div class="alert-banner ${level}">
+    <div class="alert-icon">${icon}</div>
+    <div class="alert-content">
+      <div class="alert-title">${title}</div>
+      <div class="alert-list">${rows}</div>
+    </div>
+  </div>`;
+}
+
+// ─── RELANCES BANQUES & RDV ────────────────────────────────────────────────────
+function addRelance(dossierId, type, note, done=false) {
+  const d = state.dossiers.find(x => x.id === dossierId);
+  if (!d) return;
+  if (!d.relances) d.relances = [];
+  d.relances.push({
+    date: new Date().toISOString().split('T')[0],
+    heure: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}),
+    type,
+    note: note || '',
+    done,
+  });
+  // Si marquée accomplie, on enregistre la date d'accomplissement
+  if (done) d[`relance_${type}_done`] = new Date().toISOString().split('T')[0];
+  saveState();
+  toast(done ? `Relance marquée accomplie ✓` : `Relance enregistrée pour ${d.prenom} ${d.nom}`, 'success');
+  render();
+}
+
+function marquerRelanceAccomplie(dossierId, type) {
+  const d = state.dossiers.find(x => x.id === dossierId);
+  if (!d) return;
+  d[`relance_${type}_done`] = new Date().toISOString().split('T')[0];
+  if (!d.relances) d.relances = [];
+  d.relances.push({
+    date: new Date().toISOString().split('T')[0],
+    heure: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}),
+    type,
+    note: 'Relance accomplie ✓',
+    done: true,
+  });
+  saveState();
+  toast(`Relance accomplie — alerte supprimée ✓`, 'success');
+  render();
+}
+
+function openRelanceModal(dossierId, type) {
+  state.pendingRelance = { dossierId, type };
+  const d = state.dossiers.find(x => x.id === dossierId);
+  document.getElementById('relance-modal-title').textContent =
+    type === 'banque' ? `Relance banque – ${d.prenom} ${d.nom}` : `Relance RDV banque – ${d.prenom} ${d.nom}`;
+  document.getElementById('relance-note').value = '';
+  document.getElementById('modal-relance').classList.add('open');
+}
+
+function confirmRelance() {
+  const { dossierId, type } = state.pendingRelance;
+  const note = document.getElementById('relance-note').value;
+  addRelance(dossierId, type, note);
+  closeModal('modal-relance');
+}
+
+function buildSmsRelanceBanque(d) {
+  const banques = [d.banque1, d.banque2, d.banque3].filter(Boolean).join(', ');
+  const msg = `Bonjour, je me permets de revenir vers vous concernant la demande de financement de M./Mme ${d.nom} déposée le ${d.dateInterro||'…'}. Pourriez-vous me communiquer votre décision ? Merci par avance.`;
+  return `sms:?body=${encodeURIComponent(msg)}`;
+}
+
+function buildSmsRelanceRdv(d) {
+  const msg = `Bonjour ${d.prenom}, je reviens vers vous suite à votre rendez-vous avec ${d.banqueChoisie||'la banque'} du ${d.dateRdvBanque||'…'}. Avez-vous des retours de leur part ? N'hésitez pas à me contacter. Cordialement.`;
+  const tel = (d.telephone||'').replace(/\s/g,'');
+  return `sms:${tel}?body=${encodeURIComponent(msg)}`;
+}
+
+// Calcul jours depuis une date
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.round((today - d) / 86400000);
+}
+
+// Récupère toutes les échéances de relance
+function getAllRelanceItems() {
+  const items = [];
+
+  state.dossiers.forEach(d => {
+    if (d.phase === 8) return;
+
+    // Relance banques (P3) — J+7 après dateInterro
+    if (d.phase === 3 && d.dateInterro) {
+      if (d.relance_banque_done) return; // accomplie → masquée
+      const j = daysSince(d.dateInterro);
+      const lastRelance = (d.relances||[]).filter(r=>r.type==='banque').slice(-1)[0];
+      if (j >= 7) {
+        items.push({
+          type: 'banque', dossier: d,
+          jours: j, lastRelance,
+          label: `Relance banques – ${[d.banque1,d.banque2,d.banque3].filter(Boolean).join(', ')}`,
+          urgence: j >= 14 ? 'urgent' : 'warning',
+          dateRef: d.dateInterro,
+        });
+      }
+    }
+
+    // Relance RDV banque (P4) — J+7 après dateRdvBanque
+    if (d.phase === 4 && d.dateRdvBanque) {
+      if (d.relance_rdv_done) return; // accomplie → masquée
+      const j = daysSince(d.dateRdvBanque);
+      const lastRelance = (d.relances||[]).filter(r=>r.type==='rdv').slice(-1)[0];
+      if (j >= 7) {
+        items.push({
+          type: 'rdv', dossier: d,
+          jours: j, lastRelance,
+          label: `Relance après RDV ${d.banqueChoisie||'banque'}`,
+          urgence: j >= 14 ? 'urgent' : 'warning',
+          dateRef: d.dateRdvBanque,
+        });
+      }
+    }
+
+    // Offres J+11
+    if (d.phase === 5 && d.dateLimiteAcceptation) {
+      if (d.relance_offres_done) return;
+      const j = daysUntilDeadline(d.dateLimiteAcceptation);
+      if (j !== null && j <= 5) {
+        items.push({
+          type: 'offres', dossier: d,
+          jours: j, lastRelance: null,
+          label: `Offre expire dans ${j >= 0 ? 'J-'+j : 'expiré'}`,
+          urgence: j <= 2 ? 'urgent' : 'warning',
+          dateRef: d.dateLimiteAcceptation,
+        });
+      }
+    }
+  });
+
+  return items.sort((a,b) => {
+    const score = r => r.urgence === 'urgent' ? 0 : 1;
+    return score(a) - score(b) || b.jours - a.jours;
+  });
+}
+
+function getAgendaUrgentCount() {
+  return getAllRelanceItems().filter(r => r.urgence === 'urgent').length;
+}
+
+function renderAgenda() {
+  const div = document.createElement('div');
+  div.className = 'phase-view visible';
+  const items = getAllRelanceItems();
+  const urgent = items.filter(i => i.urgence === 'urgent');
+  const warning = items.filter(i => i.urgence === 'warning');
+
+  const renderItem = (item) => {
+    const d = item.dossier;
+    const cls = item.urgence;
+    const tel = (d.telephone||'').replace(/\s/g,'');
+    const contactBtn = item.type === 'banque'
+      ? `<a href="tel:" class="btn-sms ${cls}" style="font-size:12px;padding:7px 12px">📞 Appeler banque</a>`
+      : `<a href="tel:${tel}" class="btn-sms ${cls}" style="font-size:12px;padding:7px 12px">📞 Appeler ${d.prenom}</a>`;
+    const smsBtn = item.type === 'rdv'
+      ? `<a href="${buildSmsRelanceRdv(d)}" class="btn-sms ok" style="font-size:12px;padding:7px 12px">📱 SMS</a>`
+      : item.type === 'offres'
+      ? `<a href="${buildSmsLink(d)}" class="btn-sms ${cls}" style="font-size:12px;padding:7px 12px">📱 SMS client</a>`
+      : '';
+    const relances = (d.relances||[]).filter(r => r.type === item.type);
+    const relancesBadge = relances.length > 0
+      ? `<span style="font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 7px;border-radius:4px;color:var(--text-muted)">${relances.length} relance${relances.length>1?'s':''}</span>`
+      : `<span style="font-size:10px;color:var(--text-dim)">Aucune relance</span>`;
+    const histoHTML = relances.length > 0 ? `
+      <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Historique</div>
+        ${relances.map(r => `
+          <div style="display:flex;gap:8px;font-size:11px;color:var(--text-muted);margin-bottom:3px">
+            <span style="font-family:'DM Mono',monospace;color:var(--text-dim)">${r.date} ${r.heure}</span>
+            <span>${r.note||'—'}</span>
+          </div>`).join('')}
+      </div>` : '';
+    return `
+      <div style="background:var(--surface);border:1px solid ${cls==='urgent'?'var(--pa-light)':'var(--p4-light)'};border-left:4px solid ${cls==='urgent'?'var(--pa)':'var(--p4)'};border-radius:10px;padding:14px 16px;margin-bottom:12px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+              <span style="font-size:13px;font-weight:700;color:var(--text)">${d.prenom} ${d.nom}</span>
+              <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);background:var(--surface2);padding:2px 6px;border-radius:3px">${d.id}</span>
+              <span style="font-size:11px;color:${cls==='urgent'?'var(--pa)':'var(--p4)'};font-weight:600">${item.label}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">
+              ${d.telephone}
+              ${item.type==='banque'?` · Interrogation : ${d.dateInterro}`:item.type==='rdv'?` · RDV : ${d.dateRdvBanque} ${d.heureRdv||''}`:''}
+              <span style="color:${cls==='urgent'?'var(--pa)':'var(--p4)'};margin-left:8px;font-weight:600">${item.type!=='offres'?`J+${item.jours} sans retour`:''}</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              ${relancesBadge}
+              ${item.lastRelance?`<span style="font-size:10px;color:var(--text-dim)">Dernière : ${item.lastRelance.date}</span>`:''}
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            ${contactBtn}
+            ${smsBtn}
+            ${item.type!=='offres'?`<button class="btn btn-ghost btn-sm" onclick="openRelanceModal('${d.id}','${item.type}')">✏️ Note</button>`:''}
+            <button class="btn btn-ghost btn-sm" style="color:var(--p2);border-color:var(--p2-light)" onclick="marquerRelanceAccomplie('${d.id}','${item.type}')">✅ Accompli</button>
+          </div>
+        </div>
+        ${histoHTML}
+      </div>`;
+  };
+
+  div.innerHTML = `
+    <div class="phase-header">
+      <div class="phase-title-group">
+        <div class="phase-badge" style="background:var(--p4-bg);border-color:var(--p4-light)">📅</div>
+        <div>
+          <div class="phase-title">Agenda des relances</div>
+          <div class="phase-subtitle">Suivi des actions en attente avec traçabilité</div>
+        </div>
+      </div>
+      <span class="phase-count">${items.length} action${items.length!==1?'s':''}</span>
+    </div>
+
+    ${items.length === 0 ? `
+      <div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <p>Aucune relance en attente — tout est à jour !</p>
+      </div>
+    ` : ''}
+
+    ${urgent.length > 0 ? `
+      <div style="margin-bottom:6px">
+        <div style="font-size:11px;font-weight:700;color:var(--pa);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">
+          🚨 Urgentes (${urgent.length})
+        </div>
+        ${urgent.map(renderItem).join('')}
+      </div>
+    ` : ''}
+
+    ${warning.length > 0 ? `
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--p4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;margin-top:${urgent.length>0?'16px':'0'}">
+          ⏰ À surveiller (${warning.length})
+        </div>
+        ${warning.map(renderItem).join('')}
+      </div>
+    ` : ''}
+  `;
+  return div;
+}
+
+// ─── NAVIGATION ────────────────────────────────────────────────────────────────
+function setView(view) {
+  state.currentView = view;
+  render();
+}
+
+// ─── NEW DOSSIER ───────────────────────────────────────────────────────────────
+function openNewDossier() {
+  const container = document.getElementById('form-new-fields');
+  container.innerHTML = renderFormFields(P1_FIELDS, 'new');
+  document.getElementById('modal-new').classList.add('open');
+  // Default date to today
+  const todayInput = document.getElementById('new-dateR1');
+  if (todayInput) todayInput.value = new Date().toISOString().split('T')[0];
+}
+
+function saveNewDossier() {
+  const data = collectFormData(P1_FIELDS, 'new');
+  if (!data.nom || !data.prenom || !data.telephone) {
+    toast('Nom, prénom et téléphone sont obligatoires', 'error'); return;
+  }
+  if (!data.dateR1) {
+    toast('Veuillez indiquer la date du R1', 'error'); return;
+  }
+
+  const id = `DOS-${String(state.nextId++).padStart(3,'0')}`;
+  const dossier = {
+    id, phase: 0, ...data,
+    history: [{ date: data.dateR1 || new Date().toISOString().split('T')[0], from: -1, to: 0, note: 'Création du dossier' }]
+  };
+
+  // Si résultat R1 = Abandonné, mettre directement en abandonnés
+  if (data.resultatR1 === 'Abandonné') {
+    dossier.phase = 8;
+    dossier.abandonPhase = 'Phase 1 - R1';
+    dossier.abandonMotif = 'Projet non mature';
+  }
+
+  state.dossiers.push(dossier);
+  saveState();
+  closeModal('modal-new');
+  toast(`Dossier ${id} créé – ${data.prenom} ${data.nom}`, 'success');
+
+  if (dossier.phase === 0) setView('p1');
+  else setView('pa');
+}
+
+// ─── TRANSITION ────────────────────────────────────────────────────────────────
+function startTransition(dossierId) {
+  const d = state.dossiers.find(x => x.id === dossierId);
+  if (!d) return;
+
+  const fromPhase = PHASES[d.phase];
+  const toPhase = PHASES[d.phase + 1];
+  state.pendingTransition = dossierId;
+  state.currentDossierEditing = dossierId;
+  pushPresence();
+
+  // Banner
+  document.getElementById('modal-transition').style.setProperty('--from-bg', fromPhase.bg);
+  document.getElementById('modal-transition').style.setProperty('--to-bg', toPhase.bg);
+
+  document.getElementById('transition-arrow-row').innerHTML = `
+    <div class="phase-pill" style="background:${fromPhase.bg};color:${fromPhase.color};border:1px solid ${fromPhase.border}">
+      ${fromPhase.emoji} ${fromPhase.short}
+    </div>
+    <span style="font-size:24px;color:var(--text-muted)">→</span>
+    <div class="phase-pill" style="background:${toPhase.bg};color:${toPhase.color};border:1px solid ${toPhase.border}">
+      ${toPhase.emoji} ${toPhase.short}
+    </div>
+  `;
+  document.getElementById('transition-client-name').textContent = `${d.prenom} ${d.nom}`;
+  document.getElementById('transition-subtitle').textContent = d.id + ' · ' + fromPhase.name;
+  document.getElementById('transition-desc').textContent = getTransitionDesc(d.phase + 1);
+
+  // Fields
+  const fields = TRANSITION_FIELDS[d.phase + 1] || [];
+  const container = document.getElementById('transition-fields');
+  container.innerHTML = renderFormFields(fields, 'tr');
+
+  // Pre-fill with existing data
+  fields.forEach(f => {
+    const el = document.getElementById(`tr-${f.key}`);
+    if (el && d[f.key]) el.value = d[f.key];
+  });
+
+  document.getElementById('modal-transition').classList.add('open');
+}
+
+function confirmTransition() {
+  const d = state.dossiers.find(x => x.id === state.pendingTransition);
+  if (!d) return;
+
+  const fields = TRANSITION_FIELDS[d.phase + 1] || [];
+  const newData = collectFormData(fields, 'tr');
+
+  // Check required
+  const missing = fields.filter(f => f.required && !newData[f.key]);
+  if (missing.length > 0) {
+    toast(`Champ requis : ${missing.map(f=>f.label).join(', ')}`, 'error'); return;
+  }
+
+  const fromPhase = PHASES[d.phase];
+  const toPhase = PHASES[d.phase + 1];
+
+  Object.assign(d, newData);
+
+  // ── Calcul automatique J+11 pour les offres ──
+  if (d.phase + 1 === 6 && newData.dateOffres) {
+    const dt = new Date(newData.dateOffres);
+    dt.setDate(dt.getDate() + 11);
+    d.dateLimiteAcceptation = dt.toISOString().split('T')[0];
+  }
+
+  d.history = d.history || [];
+  d.history.push({
+    date: new Date().toISOString().split('T')[0],
+    from: d.phase,
+    to: d.phase + 1,
+    note: `Passage de ${fromPhase.short} à ${toPhase.short}`
+  });
+  d.phase = d.phase + 1;
+
+  saveState();
+  closeModal('modal-transition');
+  state.currentDossierEditing = null;
+  pushPresence();
+  toast(`${d.prenom} ${d.nom} est maintenant en ${toPhase.name} ${toPhase.emoji}`, 'success');
+  setView(toPhase.key);
+}
+
+function getTransitionDesc(targetPhase) {
+  return [
+    '',
+    'Le client a une promesse ou offre d\'achat — qualifiez le dossier pour le R2.',
+    'Renseignez les informations de signature du mandat et les honoraires convenus.',
+    'Indiquez les banques interrogées et la banque sélectionnée par votre client.',
+    'Planifiez le rendez-vous de votre client avec sa banque.',
+    'Enregistrez la date d\'édition des offres de prêt (délai J+11 calculé automatiquement).',
+    'Renseignez le notaire et la date de signature prévue.',
+    'Confirmez la signature et l\'encaissement de vos honoraires.',
+  ][targetPhase] || '';
+}
+
+// ─── ABANDON ───────────────────────────────────────────────────────────────────
+function openAbandon(dossierId) {
+  state.pendingAbandon = dossierId;
+  document.getElementById('abandon-motif').value = '';
+  document.getElementById('abandon-relance').value = 'Non';
+  document.getElementById('abandon-notes').value = '';
+  document.getElementById('modal-abandon').classList.add('open');
+}
+
+function confirmAbandon() {
+  const d = state.dossiers.find(x => x.id === state.pendingAbandon);
+  if (!d) return;
+  const motif = document.getElementById('abandon-motif').value;
+  if (!motif) { toast('Veuillez sélectionner un motif', 'error'); return; }
+
+  d.abandonMotif = motif;
+  d.abandonRelance = document.getElementById('abandon-relance').value;
+  d.abandonNotes = document.getElementById('abandon-notes').value;
+  d.abandonPhase = PHASES[d.phase].name;
+  d.history = d.history || [];
+  d.history.push({ date: new Date().toISOString().split('T')[0], from: d.phase, to: 8, note: `Abandon : ${motif}` });
+  d.phase = 8;
+
+  saveState();
+  closeModal('modal-abandon');
+  toast(`Dossier ${d.id} déplacé en Abandonnés`, 'info');
+  setView('pa');
+}
+
+// ─── FORMS ─────────────────────────────────────────────────────────────────────
+function renderFormFields(fields, prefix) {
+  return `<div class="form-grid">${fields.map(f => {
+    const id = `${prefix}-${f.key}`;
+    const full = f.full ? 'full' : '';
+    if (f.type === 'select') {
+      return `<div class="form-group ${full}">
+        <label>${f.label}${f.required?' *':''}</label>
+        <select id="${id}">
+          ${!f.required ? '<option value="">--</option>' : ''}
+          ${(f.options||[]).map(o=>`<option value="${o}">${o}</option>`).join('')}
+        </select>
+      </div>`;
+    }
+    if (f.type === 'textarea') {
+      return `<div class="form-group ${full}">
+        <label>${f.label}</label>
+        <textarea id="${id}" placeholder="${f.placeholder||''}"></textarea>
+      </div>`;
+    }
+    return `<div class="form-group ${full}">
+      <label>${f.label}${f.required?' *':''}</label>
+      <input type="${f.type}" id="${id}" placeholder="${f.placeholder||''}">
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function collectFormData(fields, prefix) {
+  const data = {};
+  fields.forEach(f => {
+    const el = document.getElementById(`${prefix}-${f.key}`);
+    if (el) data[f.key] = el.value;
+  });
+  return data;
+}
+
+// ─── SEARCH / FILTER ───────────────────────────────────────────────────────────
+function filterCards(phaseKey) {
+  const q = document.getElementById(`search-${phaseKey}`).value.toLowerCase();
+  const phase = PHASES.find(p => p.key === phaseKey);
+  const dossiers = state.dossiers.filter(d => d.phase === phase.id);
+  const container = document.getElementById(`cards-${phaseKey}`);
+  const filtered = q ? dossiers.filter(d =>
+    (d.nom+d.prenom+d.telephone+d.email+d.id).toLowerCase().includes(q)
+  ) : dossiers;
+  container.innerHTML = filtered.length > 0
+    ? filtered.map(d => renderCardHTML(d)).join('')
+    : `<div class="empty-state"><div class="empty-icon">🔍</div><p>Aucun résultat</p></div>`;
+}
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) closeModal(e.target.id);
+});
+
+// ─── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// ─── ÉDITION DOSSIER ───────────────────────────────────────────────────────────
+// Champs éditables par phase — tous les champs de la phase + champs de base
+function getEditFields(phase) {
+  const base = [
+    { key: 'nom',        label: 'Nom',             type: 'text',   required: true },
+    { key: 'prenom',     label: 'Prénom',           type: 'text',   required: true },
+    { key: 'telephone',  label: 'Téléphone',        type: 'text',   required: true },
+    { key: 'email',      label: 'Email',            type: 'email' },
+    { key: 'gestionnaire', label: 'Gestionnaire',   type: 'select', options: ['Jean Dupont','Marie Lambert','Autre'] },
+  ];
+  const extra = {
+    0: [ // R1
+      { key: 'typeContact',        label: 'Situation',              type: 'select', options: ['En recherche de bien','Offre acceptée','Compromis signé'] },
+      { key: 'montantBienEstime',  label: 'Montant bien estimé (€)',type: 'number', placeholder: '300000' },
+      { key: 'apport',             label: 'Apport (€)',             type: 'number', placeholder: '30000' },
+      { key: 'dateR1',             label: 'Date du R1',             type: 'date' },
+      { key: 'resultatR1',         label: 'Résultat R1',            type: 'select', options: ['Qualifié','À retravailler','Abandonné'] },
+      { key: 'notesR1',            label: 'Notes R1',               type: 'textarea', full: true },
+    ],
+    1: [ // R2
+      { key: 'dateR2',         label: 'Date du R2',                   type: 'date' },
+      { key: 'typePromesse',   label: 'Type',                         type: 'select', options: ['Promesse de vente signée','Offre d\'achat acceptée','Compromis signé'] },
+      { key: 'datePromesse',   label: 'Date promesse / offre',        type: 'date' },
+      { key: 'montantBienDef', label: 'Montant définitif du bien (€)',type: 'number' },
+      { key: 'apportConfirme', label: 'Apport confirmé (€)',          type: 'number' },
+      { key: 'notesR2',        label: 'Notes R2',                     type: 'textarea', full: true },
+    ],
+    2: [ // Mandat
+      { key: 'dateMandat',         label: 'Date mandat',            type: 'date' },
+      { key: 'montantBien',        label: 'Montant bien (€)',        type: 'number' },
+      { key: 'montantPret',        label: 'Montant prêt (€)',        type: 'number' },
+      { key: 'apport',             label: 'Apport (€)',              type: 'number' },
+      { key: 'duree',              label: 'Durée (ans)',             type: 'number' },
+      { key: 'honorairesMandat',   label: 'Honoraires convenus HT (€)', type: 'number' },
+      { key: 'notesMandat',        label: 'Notes',                  type: 'textarea', full: true },
+    ],
+    2: [ // Banques
+      { key: 'dateInterro',        label: 'Date interrogation',     type: 'date' },
+      { key: 'banque1',            label: 'Banque 1',               type: 'text' },
+      { key: 'taux1',              label: 'Taux banque 1 (%)',      type: 'text' },
+      { key: 'banque2',            label: 'Banque 2',               type: 'text' },
+      { key: 'taux2',              label: 'Taux banque 2 (%)',      type: 'text' },
+      { key: 'banque3',            label: 'Banque 3',               type: 'text' },
+      { key: 'taux3',              label: 'Taux banque 3 (%)',      type: 'text' },
+      { key: 'banqueChoisie',      label: 'Banque choisie',         type: 'text' },
+      { key: 'tauxRetenu',         label: 'Taux retenu (%)',        type: 'text' },
+    ],
+    3: [ // RDV Banque
+      { key: 'dateRdvBanque',      label: 'Date RDV banque',        type: 'date' },
+      { key: 'heureRdv',           label: 'Heure',                  type: 'time' },
+      { key: 'lieuRdv',            label: 'Lieu / Agence',          type: 'text' },
+      { key: 'conseillerBanque',   label: 'Conseiller banque',      type: 'text' },
+      { key: 'notesRdv',           label: 'Notes',                  type: 'textarea', full: true },
+    ],
+    4: [ // Offres
+      { key: 'dateOffres',         label: "Date édition offres",    type: 'date' },
+      { key: 'dateLimiteAcceptation', label: 'Date limite (J+11)', type: 'date' },
+      { key: 'taeg',               label: 'TAEG (%)',               type: 'text' },
+      { key: 'assurance',          label: 'Assurance (%)',          type: 'text' },
+      { key: 'notesOffres',        label: 'Notes',                  type: 'textarea', full: true },
+    ],
+    5: [ // Notaire
+      { key: 'notaire',            label: 'Notaire',                type: 'text' },
+      { key: 'dateSignaturePrevue',label: 'Date signature prévue',  type: 'date' },
+      { key: 'montantBienDefinitif',label: 'Montant bien définitif (€)', type: 'number' },
+      { key: 'honorairesHT',       label: 'Honoraires HT (€)',      type: 'number' },
+      { key: 'notesNotaire',       label: 'Notes',                  type: 'textarea', full: true },
+    ],
+    6: [ // Honoraires
+      { key: 'dateSignatureEffective', label: 'Date signature',     type: 'date' },
+      { key: 'honorairesHT',       label: 'Honoraires HT (€)',      type: 'number' },
+      { key: 'modePaiement',       label: 'Mode paiement',          type: 'select', options: ['Virement','Chèque','Espèces'] },
+      { key: 'dateEncaissement',   label: 'Date encaissement',      type: 'date' },
+      { key: 'notesHonoraires',    label: 'Notes',                  type: 'textarea', full: true },
+    ],
+    7: [ // Abandonnés
+      { key: 'abandonMotif',       label: 'Motif',                  type: 'text' },
+      { key: 'abandonRelance',     label: 'Relance',                type: 'select', options: ['Non','Dans 3 mois','Dans 6 mois','Dans 1 an'] },
+      { key: 'abandonNotes',       label: 'Notes',                  type: 'textarea', full: true },
+    ],
+  };
+  return [...base, ...(extra[phase] || [])];
+}
+
+function openEdit(dossierId) {
+  const d = state.dossiers.find(x => x.id === dossierId);
+  if (!d) return;
+  state.pendingEdit = dossierId;
+  state.currentDossierEditing = dossierId;
+  pushPresence();
+
+  const phase = PHASES[d.phase];
+  document.getElementById('edit-modal-title').innerHTML =
+    `✏️ Modifier – ${d.prenom} ${d.nom} <span style="font-size:12px;font-weight:400;color:var(--text-muted)">${phase.emoji} ${phase.name}</span>`;
+
+  const fields = getEditFields(d.phase);
+  document.getElementById('edit-modal-body').innerHTML = renderFormFields(fields, 'edit');
+
+  // Pré-remplir tous les champs avec les valeurs existantes
+  fields.forEach(f => {
+    const el = document.getElementById(`edit-${f.key}`);
+    if (el && d[f.key] !== undefined && d[f.key] !== null) {
+      el.value = d[f.key];
+    }
+  });
+
+  document.getElementById('modal-edit').classList.add('open');
+}
+
+function saveEdit() {
+  const d = state.dossiers.find(x => x.id === state.pendingEdit);
+  if (!d) return;
+
+  const fields = getEditFields(d.phase);
+  fields.forEach(f => {
+    const el = document.getElementById(`edit-${f.key}`);
+    if (el) {
+      const val = el.value;
+      if (val !== '' || f.type === 'select') d[f.key] = val;
+    }
+  });
+
+  // Recalcul J+11 si dateOffres modifiée
+  if (d.phase === 5 && d.dateOffres) {
+    const dt = new Date(d.dateOffres);
+    dt.setDate(dt.getDate() + 11);
+    d.dateLimiteAcceptation = dt.toISOString().split('T')[0];
+  }
+
+  saveState();
+  closeModal('modal-edit');
+  state.currentDossierEditing = null;
+  pushPresence();
+  toast(`Dossier ${d.prenom} ${d.nom} mis à jour ✓`, 'success');
+  render();
+}
+
+// ─── SYNC CONFIG ───────────────────────────────────────────────────────────────
+function openSyncConfig() {
+  const stored = localStorage.getItem('gs_script_url') || GS_SCRIPT_URL || '';
+  document.getElementById('script-url-input').value = stored;
+  document.getElementById('modal-sync').classList.add('open');
+}
+
+function saveSyncConfig() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if (url) {
+    localStorage.setItem('gs_script_url', url);
+    toast('URL Apps Script enregistrée — synchronisation active !', 'success');
+    const payload = JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId });
+    gsWrite(payload);
+  } else {
+    localStorage.removeItem('gs_script_url');
+    toast('URL supprimée — mode local uniquement', 'info');
+  }
+  closeModal('modal-sync');
+}
+
+// ─── PRÉSENCE ──────────────────────────────────────────────────────────────────
+const USERS = ['Christophe', 'Laure'];
+
+function openPresenceChoice() {} // plus utilisée
+
+function setPresenceUser(name) {
+  currentUser = name;
+  localStorage.setItem('pipeline_user', name);
+  pushPresence();
+  updatePresenceUI();
+  toast(`Bonjour ${name} ! 👋`, 'success');
+}
+
+// Écrit la présence dans Google Sheets (cellule B1)
+async function pushPresence() {
+  if (!currentUser || !GS_SCRIPT_URL) return;
+  const payload = JSON.stringify({
+    type: 'presence',
+    user: currentUser,
+    ts: Date.now(),
+    dossier: state.currentDossierEditing || null, // dossier en cours d'édition
+  });
+  try {
+    await fetch(GS_SCRIPT_URL + '?type=presence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload,
+      mode: 'no-cors',
+    });
+  } catch(e) {}
+}
+
+// Lit les présences depuis Google Sheets
+async function fetchPresence() {
+  if (!GS_SCRIPT_URL) return;
+  try {
+    const res = await fetch(`${GS_SCRIPT_URL}?action=presence`, { mode: 'cors' });
+    if (!res.ok) return;
+    const text = await res.text();
+    if (!text || text === '{}' || text.trim() === '') return;
+    const data = JSON.parse(text);
+    updatePresenceUI(data);
+  } catch(e) {}
+}
+
+function updatePresenceUI(presenceData) {
+  const myName    = currentUser;
+  const otherName = USERS.find(u => u !== myName);
+  const now       = Date.now();
+
+  const myDot  = document.getElementById('my-presence-dot');
+  const mySpan = document.getElementById('my-presence-name');
+  if (myName) {
+    myDot.style.background  = '#10b981';
+    mySpan.textContent      = myName;
+    mySpan.style.color      = '#10b981';
+    mySpan.style.fontWeight = '600';
+  }
+
+  const otherDot  = document.getElementById('other-presence-dot');
+  const otherSpan = document.getElementById('other-presence-name');
+  if (presenceData && presenceData[otherName]) {
+    const entry   = presenceData[otherName];
+    const ts      = typeof entry === 'object' ? entry.ts : entry;
+    const dossier = typeof entry === 'object' ? entry.dossier : null;
+    const elapsed = Math.round((now - ts) / 1000);
+
+    if (elapsed < 60) {
+      otherDot.style.background = '#10b981';
+      const dosLabel = dossier ? ` · ${dossier}` : '';
+      otherSpan.textContent = `${otherName}${dosLabel}`;
+      otherSpan.style.color = '#10b981';
+      showPresenceAlert(true, otherName, dossier);
+    } else if (elapsed < 300) {
+      otherDot.style.background = '#f59e0b';
+      otherSpan.textContent     = `${otherName} (${Math.round(elapsed/60)} min)`;
+      otherSpan.style.color     = '#f59e0b';
+      showPresenceAlert(false);
+    } else {
+      otherDot.style.background = 'var(--text-dim)';
+      otherSpan.textContent     = `${otherName} (hors ligne)`;
+      otherSpan.style.color     = 'var(--text-dim)';
+      showPresenceAlert(false);
+    }
+  } else if (otherName) {
+    otherDot.style.background = 'var(--text-dim)';
+    otherSpan.textContent     = `${otherName} (hors ligne)`;
+    otherSpan.style.color     = 'var(--text-dim)';
+    showPresenceAlert(false);
+  }
+}
+
+function showPresenceAlert(bothOnline, otherName, otherDossier) {
+  // Supprimer l'ancienne bannière
+  const old = document.getElementById('presence-alert-banner');
+  if (old) old.remove();
+
+  if (!bothOnline) return;
+
+  const myDossier = state.currentDossierEditing;
+  const sameDossier = myDossier && otherDossier && myDossier === otherDossier;
+  const d = sameDossier ? state.dossiers.find(x => x.id === myDossier) : null;
+  const nomDossier = d ? `${d.prenom} ${d.nom}` : '';
+
+  const banner = document.createElement('div');
+  banner.id = 'presence-alert-banner';
+
+  if (sameDossier) {
+    // ⚠️ Même dossier — alerte rouge
+    banner.style.cssText = `background:var(--pa-bg);border:1px solid var(--pa-light);border-left:4px solid var(--pa);padding:10px 16px;font-size:12px;color:var(--pa);display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99`;
+    banner.innerHTML = `<span style="font-size:16px">🚨</span><span><strong>${otherName} modifie aussi le dossier ${myDossier} (${nomDossier})</strong> — attendez avant de sauvegarder !</span>`;
+  } else {
+    // ✅ En ligne mais dossiers différents — info verte
+    banner.style.cssText = `background:var(--p2-bg);border:1px solid var(--p2-light);border-left:4px solid var(--p2);padding:8px 16px;font-size:12px;color:var(--p2);display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99`;
+    const otherInfo = otherDossier ? ` (dossier ${otherDossier})` : '';
+    banner.innerHTML = `<span style="font-size:14px">🟢</span><span>${otherName} est connecté(e)${otherInfo} — vous travaillez sur des dossiers différents, pas de conflit ✓</span>`;
+  }
+
+  document.querySelector('.main').prepend(banner);
+  // Auto-masquer la bannière verte après 8 secondes
+  if (!sameDossier) setTimeout(() => banner.remove(), 8000);
+}
+
+// ─── EXPORT / SAUVEGARDE ───────────────────────────────────────────────────────
+function exportData() {
+  const payload = JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId }, null, 2);
+  const date = new Date().toLocaleDateString('fr-FR').replace(/\//g,'-');
+  const heure = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}).replace(':','h');
+  const blob = new Blob([payload], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `pipeline_sauvegarde_${date}_${heure}.json`;
+  a.click();
+  toast(`💾 Sauvegarde téléchargée — ${state.dossiers.length} dossiers`, 'success');
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────────
+let currentUser = localStorage.getItem('pipeline_user') || null;
+loadState();
+
+// Afficher le bon utilisateur dès le départ
+if (currentUser) {
+  updatePresenceUI();
+  pushPresence();
+}
+
+// Actualisation automatique toutes les 30 secondes
+
+
+// Présence : push toutes les 45s, fetch toutes les 20s
+
+
+
+// Indicateur visuel du compte à rebours de sync
+let syncCountdown = 30;
+setInterval(() => {
+  syncCountdown--;
+  if (syncCountdown <= 0) syncCountdown = 30;
+  const el = document.getElementById('sync-countdown');
+  if (el) el.textContent = `↻ ${syncCountdown}s`;
+}, 1000);
+</script>
+</body>
+</html>
