@@ -575,6 +575,56 @@ body {
 </head>
 <body>
 
+<!-- ÉCRAN DE CONNEXION -->
+<div id="login-screen" style="position:fixed;inset:0;background:#0f1117;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column">
+  <div style="background:#1a1d27;border:1px solid #2e3352;border-radius:16px;padding:40px 36px;width:360px;max-width:95vw;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">🏠</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:#e8eaf6;margin-bottom:4px">Pipeline Courtier</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:#7b82a8;margin-bottom:28px">Accès réservé — Cabinet Immobilier</div>
+    <div style="margin-bottom:16px;text-align:left">
+      <label style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:#7b82a8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Mot de passe</label>
+      <input type="password" id="login-password" placeholder="••••••••"
+        style="width:100%;background:#22263a;border:1px solid #2e3352;border-radius:8px;padding:11px 14px;color:#e8eaf6;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;box-sizing:border-box"
+        onkeydown="if(event.key==='Enter') checkPassword()">
+    </div>
+    <div id="login-error" style="font-family:'DM Sans',sans-serif;font-size:12px;color:#ef4444;margin-bottom:12px;display:none">
+      ❌ Mot de passe incorrect
+    </div>
+    <button onclick="checkPassword()"
+      style="width:100%;background:#10b981;border:none;border-radius:8px;padding:12px;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">
+      Accéder au pipeline →
+    </button>
+    <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#4a5080;margin-top:20px">
+      Accès réservé à Christophe &amp; Laure
+    </div>
+  </div>
+</div>
+
+<script>
+const APP_PASSWORD = 'Courtier2025';
+function checkPassword() {
+  const input = document.getElementById('login-password').value;
+  if (input === APP_PASSWORD) {
+    sessionStorage.setItem('pipeline_auth', 'ok');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('login-password').value = '';
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-password').focus();
+  }
+}
+if (sessionStorage.getItem('pipeline_auth') === 'ok') {
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('login-screen').style.display = 'none';
+  });
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('login-password');
+  if (el) el.focus();
+});
+</script>
+
 
 
 <!-- HEADER -->
