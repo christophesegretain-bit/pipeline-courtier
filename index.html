@@ -599,7 +599,6 @@ body {
     </div>
   </div>
 </div>
-
 <script>
 const APP_PASSWORD = 'Courtier2025';
 function checkPassword() {
@@ -607,22 +606,17 @@ function checkPassword() {
   if (input === APP_PASSWORD) {
     sessionStorage.setItem('pipeline_auth', 'ok');
     document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('login-password').value = '';
   } else {
     document.getElementById('login-error').style.display = 'block';
     document.getElementById('login-password').value = '';
     document.getElementById('login-password').focus();
   }
 }
+// Vérifier session au chargement
 if (sessionStorage.getItem('pipeline_auth') === 'ok') {
-  document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('login-screen').style.display = 'none';
-  });
+  document.getElementById('login-screen').style.display = 'none';
 }
-document.addEventListener('DOMContentLoaded', function() {
-  const el = document.getElementById('login-password');
-  if (el) el.focus();
-});
+document.getElementById('login-password').focus();
 </script>
 
 
