@@ -606,6 +606,8 @@ function checkPassword() {
   if (input === APP_PASSWORD) {
     sessionStorage.setItem('pipeline_auth', 'ok');
     document.getElementById('login-screen').style.display = 'none';
+    // Si les donnees sont deja chargees, re-rendre
+    if (state.dossiers.length > 0) render();
   } else {
     document.getElementById('login-error').style.display = 'block';
     document.getElementById('login-password').value = '';
@@ -2319,7 +2321,8 @@ function exportData() {
 
 // ─── INIT ──────────────────────────────────────────────────────────────────────
 let currentUser = localStorage.getItem('pipeline_user') || null;
-loadState();
+// Demarrer le chargement GS immediatement, INDEPENDAMMENT du mot de passe
+loadState();;
 setInterval(silentRefresh, 30000);
 
 // Afficher le bon utilisateur dès le départ
