@@ -1101,34 +1101,26 @@ async function loadFromGS() {
 
 // Actualisation silencieuse depuis Google Sheets (sans écraser les modales ouvertes)
 async function silentRefresh() {
-  // Ne pas rafraîchir si une modale est ouverte (l'utilisateur est en train de saisir)
   const anyOpen = document.querySelector('.modal-overlay.open');
   if (anyOpen) return;
-
   try {
-    const url = `${GS_SCRIPT_URL}?action=read`;
+    const url = GS_SCRIPT_URL + '?action=read';
     const res = await fetch(url, { mode: 'cors' });
     if (!res.ok) return;
     const text = await res.text();
     if (!text || text.trim() === '' || text === '{}') return;
     const parsed = JSON.parse(text);
-    if (!parsed || !parsed.dossiers) return;
-
-    // Comparer avec l'état actuel — ne re-rendre que si changement réel
-    const currentJson = JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId });
-    const remoteJson  = JSON.stringify({ dossiers: parsed.dossiers, nextId: parsed.nextId });
-    if (currentJson === remoteJson) return; // Rien de nouveau
-
-    // Mettre à jour l'état et re-rendre
+    if (!parsed || !parsed.dossiers || parsed.dossiers.length === 0) return;
+    // Ne mettre a jour QUE si GS a plus de dossiers ou un nextId plus grand
+    if (parsed.nextId <= state.nextId && parsed.dossiers.length <= state.dossiers.length) return;
     state.dossiers = migratePhases(parsed.dossiers);
-    state.nextId   = parsed.nextId || state.nextId;
-    localStorage.setItem('pipeline_courtier_v2', remoteJson);
+    state.nextId = parsed.nextId || state.nextId;
+    const payload = JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId });
+    localStorage.setItem('pipeline_courtier_v2', payload);
     setSyncStatus('saved', 'Synchronisé');
     render();
-    toast('📡 Mis à jour par votre collaboratrice', 'info');
-  } catch(e) {
-    // Silencieux — pas de message d'erreur pour un refresh de fond
-  }
+    toast('📡 Mis à jour depuis Google Sheets', 'info');
+  } catch(e) {}
 }
 
 function saveState() {
@@ -2322,7 +2314,7 @@ function exportData() {
 // ─── INIT ──────────────────────────────────────────────────────────────────────
 let currentUser = localStorage.getItem('pipeline_user') || null;
 // Demarrer le chargement GS immediatement, INDEPENDAMMENT du mot de passe
-loadState();;
+loadState();
 setInterval(silentRefresh, 30000);
 
 // Afficher le bon utilisateur dès le départ
