@@ -606,8 +606,7 @@ function checkPassword() {
   if (input === APP_PASSWORD) {
     sessionStorage.setItem('pipeline_auth', 'ok');
     document.getElementById('login-screen').style.display = 'none';
-    // Si les donnees sont deja chargees, re-rendre
-    if (state.dossiers.length > 0) render();
+    if (state.dossiers.length > 0) { render(); } else { chargerDepuisGS(); }
   } else {
     document.getElementById('login-error').style.display = 'block';
     document.getElementById('login-password').value = '';
@@ -1062,41 +1061,38 @@ function migratePhases(dossiers) {
 }
 
 function loadState() {
-  // Afficher un ecran d'attente
   document.getElementById('main-content').innerHTML =
     '<div style="display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:16px;color:#7b82a8">' +
     '<div style="font-size:36px">⏳</div>' +
-    '<div style="font-size:15px;font-weight:600">Chargement de vos dossiers...</div>' +
-    '<div style="font-size:12px">Connexion à Google Sheets</div>' +
-    '</div>';
-  loadFromGS();
+    '<div style="font-size:14px">Chargement...</div></div>';
+  chargerDepuisGS();
 }
 
-async function loadFromGS() {
+async function chargerDepuisGS() {
   try {
     const res = await fetch(GS_SCRIPT_URL + '?action=read', { mode: 'cors' });
     if (res.ok) {
       const text = await res.text();
-      if (text && text.length > 200) {
+      if (text && text.length > 100) {
         const parsed = JSON.parse(text);
         if (parsed && parsed.dossiers && parsed.dossiers.length > 0) {
-          state.dossiers = migratePhases(parsed.dossiers);
+          state.dossiers = parsed.dossiers;
           state.nextId = parsed.nextId || 1;
-          setSyncStatus('saved', 'Synchronisé ✅');
+          setSyncStatus('saved', '✅ Synchronisé');
           render();
-          return; // GS charge avec succes - on s'arrete ici
+          return;
         }
       }
     }
   } catch(e) {}
-  // GS inaccessible ou vide - utiliser les donnees du fichier
+  // GS inaccessible - charger donnees locales
   seedData();
-  setSyncStatus('saved', 'Données locales');
+  setSyncStatus('error', '⚠️ Hors ligne');
   render();
-  // Pousser vers GS
-  const payload = JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId });
-  gsWrite(payload);
+  gsWrite(JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId }));
 }
+
+
 
 
 // Actualisation silencieuse depuis Google Sheets (sans écraser les modales ouvertes)
@@ -1104,22 +1100,19 @@ async function silentRefresh() {
   const anyOpen = document.querySelector('.modal-overlay.open');
   if (anyOpen) return;
   try {
-    const url = GS_SCRIPT_URL + '?action=read';
-    const res = await fetch(url, { mode: 'cors' });
+    const res = await fetch(GS_SCRIPT_URL + '?action=read', { mode: 'cors' });
     if (!res.ok) return;
     const text = await res.text();
-    if (!text || text.trim() === '' || text === '{}') return;
+    if (!text || text.length < 100) return;
     const parsed = JSON.parse(text);
-    if (!parsed || !parsed.dossiers || parsed.dossiers.length === 0) return;
-    // Ne mettre a jour QUE si GS a plus de dossiers ou un nextId plus grand
-    if (parsed.nextId <= state.nextId && parsed.dossiers.length <= state.dossiers.length) return;
-    state.dossiers = migratePhases(parsed.dossiers);
-    state.nextId = parsed.nextId || state.nextId;
-    const payload = JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId });
-    localStorage.setItem('pipeline_courtier_v2', payload);
-    setSyncStatus('saved', 'Synchronisé');
-    render();
-    toast('📡 Mis à jour depuis Google Sheets', 'info');
+    if (!parsed || !parsed.dossiers) return;
+    if (parsed.nextId > state.nextId) {
+      state.dossiers = parsed.dossiers;
+      state.nextId = parsed.nextId;
+      setSyncStatus('saved', '✅ Synchronisé');
+      render();
+      toast('📡 Mis à jour depuis Google Sheets', 'info');
+    }
   } catch(e) {}
 }
 
@@ -1127,7 +1120,7 @@ function saveState() {
   const payload = JSON.stringify({ dossiers: state.dossiers, nextId: state.nextId });
   localStorage.setItem('pipeline_courtier_v2', payload);
   clearTimeout(gsSyncTimer);
-  gsSyncTimer = setTimeout(() => gsWrite(payload), 1200);
+  gsSyncTimer = setTimeout(() => gsWrite(payload), 1500);
 }
 
 function seedData() {
